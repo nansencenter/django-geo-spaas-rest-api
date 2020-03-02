@@ -1,0 +1,16 @@
+{% load i18n %}
+<form class="form-inline">
+  <div class="form-group">
+    <div class="input-group">
+      <h3>{% trans "Date" %}</h3>
+      <input type="text" class="form-control" style="width: 350px" name="{{ params.0 }}" value="{{ terms.0 }}">
+      <h3>{% trans "Location as a WKT POLYGON" %}</h3>
+      <input type="text" class="form-control" style="width: 350px" name="{{ params.1 }}" value="{{ terms.1 }}">
+      <h3>{% trans "Source" %}</h3>
+      <input type="text" class="form-control" style="width: 350px" name="{{ params.2 }}" value="{{ terms.2 }}">
+      <br/>
+      <br/>
+      <button class="btn btn-default" type="submit"><span class="glyphicon glyphicon-search" aria-hidden="true"></span> Search</button>
+    </div>
+  </div>
+</form>
