@@ -19,4 +19,6 @@ setuptools.setup(
         "Operating System :: POSIX :: Linux",
     ],
     python_requires='>=3.7',
+    install_requires=['django_geo_spaas'],
+    include_package_data=True,
 )
