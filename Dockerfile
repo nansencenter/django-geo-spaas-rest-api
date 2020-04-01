@@ -8,6 +8,4 @@ RUN pip install \
     markdown \
     django-filter 
 
-
-
 WORKDIR /src
