@@ -6,7 +6,7 @@ import json
 
 # Create your tests here.
 class DatasetURITests2(TestCase):
-
+    """basic api testing to receive 200 responses"""
 
     fixtures = ["vocabularies", "catalog"]
     def setUp(self):
