@@ -2,8 +2,8 @@
     "pk": 1,
     "model": "catalog.source",
     "fields": {
-        "platform": 102,
-        "instrument": 526,
+        "platform": 1,
+        "instrument": 2,
         "specs": "Nothing special"
     }
 },{
@@ -27,11 +27,11 @@
         "time_coverage_end": "2010-01-02T00:00:00Z",
         "time_coverage_start": "2010-01-01T00:00:00Z",
         "summary": "This is a quite short summary about the test dataset.",
-        "source": ["AQUA", "MODIS"],
+        "source": 1,
         "geographic_location": 1,
-        "data_center": ["NERSC"],
-        "gcmd_location": ["VERTICAL LOCATION", "SEA SURFACE", "", "", ""],
-        "ISO_topic_category": ["Oceans"],
+        "data_center": 1,
+        "gcmd_location": 1,
+        "ISO_topic_category": 1,
         "access_constraints": null
     }
 },{
@@ -43,11 +43,11 @@
         "time_coverage_end": "2010-01-03T00:00:00Z",
         "time_coverage_start": "2010-01-02T00:00:00Z",
         "summary": "This is a quite short summary about the test dataset.",
-        "source": ["AQUA", "MODIS"],
+        "source": 1,
         "geographic_location": 2,
-        "data_center": ["NERSC"],
-        "gcmd_location": ["VERTICAL LOCATION", "SEA SURFACE", "", "", ""],
-        "ISO_topic_category": ["Oceans"],
+        "data_center": 2,
+        "gcmd_location": 1,
+        "ISO_topic_category": 1,
         "access_constraints": null
     }
 },{

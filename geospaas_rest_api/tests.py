@@ -1,146 +1,194 @@
 from django.test import TestCase
 from django.test import Client
-from geospaas.vocabularies.models import Platform, Instrument 
+from geospaas.vocabularies.models import Platform, Instrument
 from geospaas.vocabularies.models import Parameter, DataCenter
 import json
 
 # Create your tests here.
-class DatasetURITests2(TestCase):
-    """basic api testing to receive 200 responses"""
+
+
+class basic_api_Tests(TestCase):
+    """basic api testing to receive 200 responses and some reponses"""
 
     fixtures = ["vocabularies", "catalog"]
+
     def setUp(self):
         self.c = Client()
 
-    def test_api_initial_calls(self):
-        
+    def test_api_root_calls(self):
+        """basic api testing to receive some responses for root"""
         response = self.c.get('//api/')
         self.assertEqual(response.status_code, 200)
 
-
-    def test_api_initial_calls2(self):
-
-        response2 = self.c.get('//api/geographic_locations/')   
+    def test_api_initial_geographic_locations_call(self):
+        """basic api testing to receive some responses for geographic_locations"""
+        response2 = self.c.get('//api/geographic_locations/')
         self.assertEqual(response2.status_code, 200)
-        self.assertContains(response2, 'geometry')
+        self.assertEqual([{'id': 1, 'geometry': 'SRID=4326;POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0))'},
+                          {'id': 2, 'geometry': 'SRID=4326;POLYGON ((20 20, 20 30, 30 30, 30 20, 20 20))'}],
+                         json.loads(response2.content))
 
-
-    def test_api_initial_calls3(self):
-
-        response3 = self.c.get('//api/sources/')
+    def test_api_initial_sources_call(self):
+        """basic api testing to receive some responses 
+        for sources"""
+        response3 = self.c.get('//api/sources/1/')
         self.assertEqual(response3.status_code, 200)
-        self.assertContains(response3, 'specs')
+        self.assertEqual({'id': 1, 'specs': 'Nothing special', 'platform': 1, 'instrument': 2},
+                         json.loads(response3.content))
 
-
-    def test_api_initial_calls4(self):
-
-        response4 = self.c.get('//api/instruments/')
+    def test_api_initial_instruments_call(self):
+        """basic api testing to receive some responses 
+        for instruments"""
+        response4 = self.c.get('//api/instruments/2/')
         self.assertEqual(response4.status_code, 200)
-        self.assertContains(response4, 'instrument_class')
+        self.assertEqual({'id': 2, 'category': 'Solar/Space Observing Instruments',
+                          'instrument_class': 'X-Ray/Gamma Ray Detectors',
+                          'type': 'dummy_included_in_test_mode',
+                          'subtype': 'dummy_included_in_test_mode',
+                          'short_name': 'HXT',
+                          'long_name': 'Hard X-ray Telescope'},
+                         json.loads(response4.content))
 
-
-    def test_api_initial_calls5(self):
-        
-        response5 = self.c.get('//api/platforms/')
+    def test_api_initial_platforms_call(self):
+        """basic api testing to receive some responses 
+        for platforms"""
+        response5 = self.c.get('//api/platforms/2/')
         self.assertEqual(response5.status_code, 200)
-        self.assertContains(response5, 'series_entity')
+        self.assertEqual({'id': 2, 'category': 'Aircraft',
+                          'series_entity': 'dummy_included_in_test_mode',
+                          'short_name': 'A340-600', 'long_name': 'Airbus A340-600'},
+                         json.loads(response5.content))
 
-
-    def test_api_initial_calls6(self):
-        
+    def test_api_initial_people_call(self):
+        """basic api testing to receive some responses 
+        for people"""
         response6 = self.c.get('//api/people/')
-        self.assertEqual(response6.status_code, 200)      
+        self.assertEqual(response6.status_code, 200)
 
-
-    def test_api_initial_calls7(self):
-
+    def test_api_initial_roles_call(self):
+        """basic api testing to receive some responses 
+        for roles"""
         response7 = self.c.get('//api/roles/')
-        self.assertEqual(response7.status_code, 200)      
+        self.assertEqual(response7.status_code, 200)
 
+    def test_api_initial_datasets_call(self):
+        """basic api testing to receive some responses 
+        for datasets"""
+        response8 = self.c.get('//api/datasets/1/')
+        self.assertEqual(response8.status_code, 200)
+        self.assertEqual({'id': 1, 'entry_id': 'NERSC_test_dataset_titusen',
+                          'entry_title': 'Test dataset',
+                          'summary': 'This is a quite short summary about the test dataset.',
+                          'time_coverage_start': '2010-01-01T00:00:00Z',
+                          'time_coverage_end': '2010-01-02T00:00:00Z',
+                          'access_constraints': None,
+                          'ISO_topic_category': 1,
+                          'data_center': 1, 'source': 1, 'geographic_location': 1,
+                          'gcmd_location': 1, 'parameters': []},
+                         json.loads(response8.content))
 
-    def test_api_initial_calls8(self):
-
-        response8 = self.c.get('//api/datasets/')
-        self.assertEqual(response8.status_code, 200)      
-        self.assertContains(response8, 'time_coverage_end')
-
-
-    def test_api_initial_calls9(self):
-
+    def test_api_initial_dataset_parameters_call(self):
+        """basic api testing to receive some responses 
+        for dataset_parameters"""
         response9 = self.c.get('//api/dataset_parameters/')
-        self.assertEqual(response9.status_code, 200)      
+        self.assertEqual(response9.status_code, 200)
 
+    def test_api_initial_dataset_uris_call(self):
+        """basic api testing to receive some responses 
+        for dataset_uris"""
+        response10 = self.c.get('//api/dataset_uris/2/')
+        self.assertEqual(response10.status_code, 200)
+        self.assertEqual({'id': 2, 'name': 'fileService',
+                          'service': 'local', 'uri': 'file://localhost/some/test/file2.ext',
+                          'dataset': 2},
+                         json.loads(response10.content))
 
-    def test_api_initial_calls10(self):
-
-        response10 = self.c.get('//api/dataset_uris/')
-        self.assertEqual(response10.status_code, 200)  
-        self.assertContains(response10, 'uri')
-
-
-    def test_api_initial_calls11(self):
-
+    def test_api_initial_dataset_relationships_call(self):
+        """basic api testing to receive some responses 
+        for dataset_relationships"""
         response11 = self.c.get('//api/dataset_relationships/')
-        self.assertEqual(response11.status_code, 200)      
+        self.assertEqual(response11.status_code, 200)
+
+    def test_api_initial_datacenters_call(self):
+        """basic api testing to receive some responses 
+        for datacenters"""
+        response12 = self.c.get('//api/datacenters/2/')
+        self.assertEqual(response12.status_code, 200)
+        self.assertEqual({'id': 2, 'bucket_level0': 'ACADEMIC',
+                          'bucket_level1': 'dummy_included_in_test_mode',
+                          'bucket_level2': 'dummy_included_in_test_mode',
+                          'bucket_level3': 'dummy_included_in_test_mode',
+                          'short_name': 'AALTO', 'long_name': 'Aalto University',
+                          'data_center_url': 'dummy_included_in_test_mode'},
+                         json.loads(response12.content))
 
 
-    def test_api_initial_calls12(self):
-
-        response12 = self.c.get('//api/datacenters/')
-        self.assertEqual(response12.status_code, 200)      
-        self.assertContains(response12, 'data_center_url')
-
-
-
-class DatasetURITests_time(TestCase):
-
-
+class time_filtering_ability_for_api(TestCase):
+    '''time-filtering '''
     fixtures = ["vocabularies", "catalog"]
 
     def test_time_intervals_for_api(self):
-        
-        ''' to test if there are suitable responses for time-filtering! '''
+        ''' to test if there are suitable responses for time-filtering '''
         c = Client()
         response = c.get('//api/datasets/?date=2010-01-02T01:00:00Z')
         self.assertContains(response, 'NERSC_test_dataset_tjuetusen')
         self.assertContains(response, 'Test child dataset')
+        self.assertEqual([{'id': 2, 'entry_id': 'NERSC_test_dataset_tjuetusen',
+                           'entry_title': 'Test child dataset',
+                           'summary': 'This is a quite short summary about the test dataset.',
+                           'time_coverage_start': '2010-01-02T00:00:00Z',
+                           'time_coverage_end': '2010-01-03T00:00:00Z',
+                           'access_constraints': None,
+                           'ISO_topic_category': 1, 'data_center': 2, 'source': 1,
+                           'geographic_location': 2, 'gcmd_location': 1, 'parameters': []}],
+                         json.loads(response.content))
 
 
-
-class DatasetURITests_zone(TestCase):
-
-    ''' to test if there are suitable responses for location-filtering! '''
-
+class location_filtering_ability_for_api(TestCase):
+    '''location-filtering '''
     fixtures = ["vocabularies", "catalog"]
 
     def test_zone_for_api(self):
-        
+        ''' to test if there are suitable responses for location-filtering '''
         c = Client()
         response = c.get('//api/datasets/?zone=POINT+%289+9%29')
         # giving a location without SRID
-        self.assertContains(response, 'NERSC_test_dataset_titusen')
-        self.assertContains(response, 'This is a quite short summary about the test dataset.')
-
+        self.assertEqual([{'id': 1, 'entry_id': 'NERSC_test_dataset_titusen',
+                           'entry_title': 'Test dataset',
+                           'summary': 'This is a quite short summary about the test dataset.',
+                           'time_coverage_start': '2010-01-01T00:00:00Z',
+                           'time_coverage_end': '2010-01-02T00:00:00Z', 'access_constraints': None,
+                           'ISO_topic_category': 1, 'data_center': 1, 'source': 1,
+                           'geographic_location': 1, 'gcmd_location': 1, 'parameters': []}],
+                         json.loads(response.content))
         # giving a location with SRID
-        response2 = c.get('//api/datasets/?zone=SRID%3D4326%3BPOINT+%289+9%29')# SRID=4326;POINT (9 9)
-        self.assertContains(response2, 'NERSC_test_dataset_titusen')
-        self.assertContains(response2, \
-        'This is a quite short summary about the test dataset.')
+        # this example is for SRID=4326;POINT (9 9)
+        response2 = c.get('//api/datasets/?zone=SRID%3D4326%3BPOINT+%289+9%29')
+        self.assertEqual([{'id': 1, 'entry_id': 'NERSC_test_dataset_titusen',
+                           'entry_title': 'Test dataset',
+                           'summary': 'This is a quite short summary about the test dataset.',
+                           'time_coverage_start': '2010-01-01T00:00:00Z',
+                           'time_coverage_end': '2010-01-02T00:00:00Z', 'access_constraints': None,
+                           'ISO_topic_category': 1, 'data_center': 1, 'source': 1,
+                           'geographic_location': 1, 'gcmd_location': 1, 'parameters': []}],
+                         json.loads(response2.content))
 
 
-
-class DatasetURITests_zone_and_time_simultaneously(TestCase):
-
-    ''' to test if there are suitable responses for \
-        simultaneous-filtering(time and location)! '''
-
+class filtering_ability_for_zone_and_time_simultaneously(TestCase):
+    '''simultaneous-filtering(time and location) '''
     fixtures = ["vocabularies", "catalog"]
 
     def test_zone_for_api(self):
-        
+        ''' to test if there are suitable responses for  
+        simultaneous-filtering(time and location) '''
         c = Client()
         response = c.get('//api/datasets/?date= \
             2010-01-01T07%3A00%3A00Z&zone=POINT+%289+9%29')
-        self.assertContains(response, 'NERSC_test_dataset_titusen')
-        self.assertContains(response, \
-        'This is a quite short summary about the test dataset.')
+        self.assertEqual([{'id': 1, 'entry_id': 'NERSC_test_dataset_titusen',
+                           'entry_title': 'Test dataset',
+                           'summary': 'This is a quite short summary about the test dataset.',
+                           'time_coverage_start': '2010-01-01T00:00:00Z',
+                           'time_coverage_end': '2010-01-02T00:00:00Z', 'access_constraints': None,
+                           'ISO_topic_category': 1, 'data_center': 1, 'source': 1,
+                           'geographic_location': 1, 'gcmd_location': 1, 'parameters': []}],
+                         json.loads(response.content))
