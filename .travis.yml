@@ -2,7 +2,7 @@
 language: shell
 
 env:
-  - IMAGE_NAME="${DOCKER_ORG}/geospaas"
+  - IMAGE_NAME="${DOCKER_ORG}/geospaas_api"
 
 services: docker
 if: 'type = push'
@@ -11,14 +11,23 @@ if: 'type = push'
 # - GITHUB_API_TOKEN: Github API key for the nerscci user
 
 install:
-  - docker pull $IMAGE_NAME || true
-  - docker build --cache-from $IMAGE_NAME . -t ${DOCKER_ORG}/geospaas_api
+  - docker build . -t $IMAGE_NAME
 
 script:
-  - docker run --rm -v "$(pwd):/src" ${DOCKER_ORG}/geospaas_api python setup.py sdist bdist_wheel runtests.py
+  - >
+    docker run --rm
+    -e "TRAVIS=true"
+    -e TRAVIS_JOB_ID
+    -e TRAVIS_BRANCH
+    -e TRAVIS_PULL_REQUEST
+    -v "$(pwd):/src"
+    $IMAGE_NAME
+    bash -c "source /opt/conda/bin/activate && coverage run runtests.py && coveralls"
 
 # If the build is triggered by a tag and an API token is defined for the branch
 # (in the travis repository settings), a package is built and added to the release
+#-e COVERALLS_REPO_TOKEN
+#
 deploy:
   on:
     tags: true

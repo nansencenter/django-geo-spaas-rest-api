@@ -1,4 +1,4 @@
-FROM geospaas:latest
+FROM nansencenter/geospaas:latest
 LABEL purpose="Environment for REST API for Django-Geo-SpaaS"
 ENV PYTHONUNBUFFERED=1
 
