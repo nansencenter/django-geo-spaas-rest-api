@@ -7,7 +7,7 @@ import json
 # Create your tests here.
 
 
-class basic_api_Tests(TestCase):
+class BasicAPITests(TestCase):
     """basic api testing to receive 200 responses and some reponses"""
 
     fixtures = ["vocabularies", "catalog"]
@@ -16,12 +16,12 @@ class basic_api_Tests(TestCase):
         self.c = Client()
 
     def test_api_root_calls(self):
-        """basic api testing to receive some responses for root"""
+        """shall return status code 200 for root"""
         response = self.c.get('//api/')
         self.assertEqual(response.status_code, 200)
 
-    def test_api_initial_geographic_locations_call(self):
-        """basic api testing to receive some responses for geographic_locations"""
+    def test_geographic_locations_call(self):
+        """shall return status code 200 for geographic_locations as well as ........................"""
         response2 = self.c.get('//api/geographic_locations/')
         self.assertEqual(response2.status_code, 200)
         self.assertEqual([{'id': 1, 'geometry': 'SRID=4326;POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0))'},
@@ -29,7 +29,7 @@ class basic_api_Tests(TestCase):
                          json.loads(response2.content))
 
     def test_api_initial_sources_call(self):
-        """basic api testing to receive some responses 
+        """basic api testing to receive some responses
         for sources"""
         response3 = self.c.get('//api/sources/1/')
         self.assertEqual(response3.status_code, 200)
@@ -37,7 +37,7 @@ class basic_api_Tests(TestCase):
                          json.loads(response3.content))
 
     def test_api_initial_instruments_call(self):
-        """basic api testing to receive some responses 
+        """basic api testing to receive some responses
         for instruments"""
         response4 = self.c.get('//api/instruments/2/')
         self.assertEqual(response4.status_code, 200)
@@ -50,7 +50,7 @@ class basic_api_Tests(TestCase):
                          json.loads(response4.content))
 
     def test_api_initial_platforms_call(self):
-        """basic api testing to receive some responses 
+        """basic api testing to receive some responses
         for platforms"""
         response5 = self.c.get('//api/platforms/2/')
         self.assertEqual(response5.status_code, 200)
@@ -60,19 +60,17 @@ class basic_api_Tests(TestCase):
                          json.loads(response5.content))
 
     def test_api_initial_people_call(self):
-        """basic api testing to receive some responses 
-        for people"""
+        """shall return status code 200 for people"""
         response6 = self.c.get('//api/people/')
         self.assertEqual(response6.status_code, 200)
 
     def test_api_initial_roles_call(self):
-        """basic api testing to receive some responses 
-        for roles"""
+        """shall return status code 200 for roles"""
         response7 = self.c.get('//api/roles/')
         self.assertEqual(response7.status_code, 200)
 
     def test_api_initial_datasets_call(self):
-        """basic api testing to receive some responses 
+        """basic api testing to receive some responses
         for datasets"""
         response8 = self.c.get('//api/datasets/1/')
         self.assertEqual(response8.status_code, 200)
@@ -88,13 +86,12 @@ class basic_api_Tests(TestCase):
                          json.loads(response8.content))
 
     def test_api_initial_dataset_parameters_call(self):
-        """basic api testing to receive some responses 
-        for dataset_parameters"""
+        """shall return status code 200 for dataset_parameters"""
         response9 = self.c.get('//api/dataset_parameters/')
         self.assertEqual(response9.status_code, 200)
 
     def test_api_initial_dataset_uris_call(self):
-        """basic api testing to receive some responses 
+        """basic api testing to receive some responses
         for dataset_uris"""
         response10 = self.c.get('//api/dataset_uris/2/')
         self.assertEqual(response10.status_code, 200)
@@ -103,14 +100,13 @@ class basic_api_Tests(TestCase):
                           'dataset': 2},
                          json.loads(response10.content))
 
-    def test_api_initial_dataset_relationships_call(self):
-        """basic api testing to receive some responses 
-        for dataset_relationships"""
+    def test_dataset_relationships_call(self):
+        """shall return status code 200 for dataset_relationships"""
         response11 = self.c.get('//api/dataset_relationships/')
         self.assertEqual(response11.status_code, 200)
 
     def test_api_initial_datacenters_call(self):
-        """basic api testing to receive some responses 
+        """basic api testing to receive some responses
         for datacenters"""
         response12 = self.c.get('//api/datacenters/2/')
         self.assertEqual(response12.status_code, 200)
@@ -123,7 +119,7 @@ class basic_api_Tests(TestCase):
                          json.loads(response12.content))
 
 
-class time_filtering_ability_for_api(TestCase):
+class TimeFilteringAbilityForAPI(TestCase):
     '''time-filtering '''
     fixtures = ["vocabularies", "catalog"]
 
@@ -144,7 +140,7 @@ class time_filtering_ability_for_api(TestCase):
                          json.loads(response.content))
 
 
-class location_filtering_ability_for_api(TestCase):
+class LocationFilteringAbilityForAPI(TestCase):
     '''location-filtering '''
     fixtures = ["vocabularies", "catalog"]
 
@@ -174,12 +170,12 @@ class location_filtering_ability_for_api(TestCase):
                          json.loads(response2.content))
 
 
-class filtering_ability_for_zone_and_time_simultaneously(TestCase):
+class FilteringAbilityForZoneAndTimeSimultaneously(TestCase):
     '''simultaneous-filtering(time and location) '''
     fixtures = ["vocabularies", "catalog"]
 
-    def test_zone_for_api(self):
-        ''' to test if there are suitable responses for  
+    def test_zone_and_time_filtering_simultaneously(self):
+        ''' to test if there are suitable responses for
         simultaneous-filtering(time and location) '''
         c = Client()
         response = c.get('//api/datasets/?date= \
