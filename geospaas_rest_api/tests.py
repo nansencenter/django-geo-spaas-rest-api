@@ -1,7 +1,5 @@
 from django.test import TestCase
 from django.test import Client
-from geospaas.vocabularies.models import Platform, Instrument
-from geospaas.vocabularies.models import Parameter, DataCenter
 import json
 
 # Create your tests here.
