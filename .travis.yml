@@ -13,7 +13,7 @@ install:
   - docker build . -t $IMAGE_NAME
 
 script:
-  - docker run --rm -v "$(pwd):/src" "nansencenter/geospaas" python setup.py sdist bdist_wheel
+  - docker run --rm -v "$(pwd):/src" $IMAGE_NAME python setup.py sdist bdist_wheel
   - >
     docker run --rm
     -e "TRAVIS=true"
