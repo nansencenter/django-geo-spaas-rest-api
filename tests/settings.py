@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     'geospaas.viewer',
     'geospaas.catalog',
     'geospaas.vocabularies',
+    'django.contrib.sessions',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
