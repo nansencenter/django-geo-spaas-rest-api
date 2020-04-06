@@ -8,7 +8,7 @@ import json
 
 
 class BasicAPITests(TestCase):
-    """basic api testing to receive 200 responses and some reponses"""
+    """basic api testing to receive 200 responses and some exact reponses"""
 
     fixtures = ["vocabularies", "catalog"]
 
@@ -21,24 +21,22 @@ class BasicAPITests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_geographic_locations_call(self):
-        """shall return status code 200 for geographic_locations as well as ........................"""
+        """shall return status code 200 for geographic_locations as well as exact geographic_locations"""
         response2 = self.c.get('//api/geographic_locations/')
         self.assertEqual(response2.status_code, 200)
         self.assertEqual([{'id': 1, 'geometry': 'SRID=4326;POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0))'},
                           {'id': 2, 'geometry': 'SRID=4326;POLYGON ((20 20, 20 30, 30 30, 30 20, 20 20))'}],
                          json.loads(response2.content))
 
-    def test_api_initial_sources_call(self):
-        """basic api testing to receive some responses
-        for sources"""
+    def test_sources_call(self):
+        """shall return status code 200 for source as well as exact source object"""
         response3 = self.c.get('//api/sources/1/')
         self.assertEqual(response3.status_code, 200)
         self.assertEqual({'id': 1, 'specs': 'Nothing special', 'platform': 1, 'instrument': 2},
                          json.loads(response3.content))
 
-    def test_api_initial_instruments_call(self):
-        """basic api testing to receive some responses
-        for instruments"""
+    def test_instruments_call(self):
+        """shall return status code 200 for instruments as well as exact instrument object"""
         response4 = self.c.get('//api/instruments/2/')
         self.assertEqual(response4.status_code, 200)
         self.assertEqual({'id': 2, 'category': 'Solar/Space Observing Instruments',
@@ -49,9 +47,8 @@ class BasicAPITests(TestCase):
                           'long_name': 'Hard X-ray Telescope'},
                          json.loads(response4.content))
 
-    def test_api_initial_platforms_call(self):
-        """basic api testing to receive some responses
-        for platforms"""
+    def test_platforms_call(self):
+        """shall return status code 200 for platforms as well as exact platform object"""
         response5 = self.c.get('//api/platforms/2/')
         self.assertEqual(response5.status_code, 200)
         self.assertEqual({'id': 2, 'category': 'Aircraft',
@@ -59,19 +56,18 @@ class BasicAPITests(TestCase):
                           'short_name': 'A340-600', 'long_name': 'Airbus A340-600'},
                          json.loads(response5.content))
 
-    def test_api_initial_people_call(self):
+    def test_people_call(self):
         """shall return status code 200 for people"""
         response6 = self.c.get('//api/people/')
         self.assertEqual(response6.status_code, 200)
 
-    def test_api_initial_roles_call(self):
+    def test_roles_call(self):
         """shall return status code 200 for roles"""
         response7 = self.c.get('//api/roles/')
         self.assertEqual(response7.status_code, 200)
 
-    def test_api_initial_datasets_call(self):
-        """basic api testing to receive some responses
-        for datasets"""
+    def test_datasets_call(self):
+        """shall return status code 200 for datasets as well as exact dataset object"""
         response8 = self.c.get('//api/datasets/1/')
         self.assertEqual(response8.status_code, 200)
         self.assertEqual({'id': 1, 'entry_id': 'NERSC_test_dataset_titusen',
@@ -85,14 +81,13 @@ class BasicAPITests(TestCase):
                           'gcmd_location': 1, 'parameters': []},
                          json.loads(response8.content))
 
-    def test_api_initial_dataset_parameters_call(self):
+    def test_dataset_parameters_call(self):
         """shall return status code 200 for dataset_parameters"""
         response9 = self.c.get('//api/dataset_parameters/')
         self.assertEqual(response9.status_code, 200)
 
-    def test_api_initial_dataset_uris_call(self):
-        """basic api testing to receive some responses
-        for dataset_uris"""
+    def test_dataset_uris_call(self):
+        """shall return status code 200 for dataset_uri as well as exact dataset_uri object"""
         response10 = self.c.get('//api/dataset_uris/2/')
         self.assertEqual(response10.status_code, 200)
         self.assertEqual({'id': 2, 'name': 'fileService',
@@ -105,9 +100,8 @@ class BasicAPITests(TestCase):
         response11 = self.c.get('//api/dataset_relationships/')
         self.assertEqual(response11.status_code, 200)
 
-    def test_api_initial_datacenters_call(self):
-        """basic api testing to receive some responses
-        for datacenters"""
+    def test_datacenters_call(self):
+        """shall return status code 200 for datacenters as well as exact datacenter object"""
         response12 = self.c.get('//api/datacenters/2/')
         self.assertEqual(response12.status_code, 200)
         self.assertEqual({'id': 2, 'bucket_level0': 'ACADEMIC',
@@ -120,15 +114,14 @@ class BasicAPITests(TestCase):
 
 
 class TimeFilteringAbilityForAPI(TestCase):
-    '''time-filtering '''
+    '''tests for time-filtering'''
     fixtures = ["vocabularies", "catalog"]
 
     def test_time_intervals_for_api(self):
-        ''' to test if there are suitable responses for time-filtering '''
+        ''' shall return status code 200 for response as well as exact dataset object(s) that
+        has the specified time in its interval'''
         c = Client()
         response = c.get('//api/datasets/?date=2010-01-02T01:00:00Z')
-        self.assertContains(response, 'NERSC_test_dataset_tjuetusen')
-        self.assertContains(response, 'Test child dataset')
         self.assertEqual([{'id': 2, 'entry_id': 'NERSC_test_dataset_tjuetusen',
                            'entry_title': 'Test child dataset',
                            'summary': 'This is a quite short summary about the test dataset.',
@@ -141,11 +134,12 @@ class TimeFilteringAbilityForAPI(TestCase):
 
 
 class LocationFilteringAbilityForAPI(TestCase):
-    '''location-filtering '''
+    '''tests for location-filtering'''
     fixtures = ["vocabularies", "catalog"]
 
     def test_zone_for_api(self):
-        ''' to test if there are suitable responses for location-filtering '''
+        '''shall return status code 200 for response as well as exact dataset object(s) that
+        belongs to specified point(with and without specification of SRID)'''
         c = Client()
         response = c.get('//api/datasets/?zone=POINT+%289+9%29')
         # giving a location without SRID
@@ -171,12 +165,12 @@ class LocationFilteringAbilityForAPI(TestCase):
 
 
 class FilteringAbilityForZoneAndTimeSimultaneously(TestCase):
-    '''simultaneous-filtering(time and location) '''
+    '''tests for simultaneous-filtering(time and location)'''
     fixtures = ["vocabularies", "catalog"]
 
     def test_zone_and_time_filtering_simultaneously(self):
-        ''' to test if there are suitable responses for
-        simultaneous-filtering(time and location) '''
+        '''shall return status code 200 for response as well as exact dataset object(s) that
+        belongs to specified point of time and a location (POINT in WKT string)'''
         c = Client()
         response = c.get('//api/datasets/?date= \
             2010-01-01T07%3A00%3A00Z&zone=POINT+%289+9%29')
