@@ -1,8 +1,8 @@
 ---
 language: shell
 
-env:
-  - IMAGE_NAME="${DOCKER_ORG}/geospaas_api"
+#env:
+#  - IMAGE_NAME="${DOCKER_ORG}/geospaas_api"
 
 services: docker
 
@@ -10,7 +10,7 @@ services: docker
 # - GITHUB_API_TOKEN: Github API key for the nerscci user
 
 install:
-  - docker build . -t $IMAGE_NAME
+  - docker build . #-t $IMAGE_NAME
 
 script:
   - docker run --rm -v "$(pwd):/src" "nansencenter/geospaas" python setup.py sdist bdist_wheel
