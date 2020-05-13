@@ -30,16 +30,16 @@ class DatasetFilter(BaseFilterBackend):
                 time_coverage_start__lte=dateutil_parse(request.query_params[self.DATE_PARAM]),
                 time_coverage_end__gte=dateutil_parse(request.query_params[self.DATE_PARAM])
             )
-        if self.LOCATION_PARAM in request.query_params and \
-           request.query_params[self.LOCATION_PARAM]:
-            zone = GEOSGeometry(request.query_params[self.LOCATION_PARAM])
-            filtered_queryset = filtered_queryset.filter(
-                geographic_location__geometry__intersects=zone
-            )
         if self.SOURCE_PARAM in request.query_params and request.query_params[self.SOURCE_PARAM]:
             filtered_queryset = filtered_queryset.filter(
                 Q(source__platform__short_name__icontains=request.query_params[self.SOURCE_PARAM]) |
                 Q(source__instrument__short_name__icontains=request.query_params[self.SOURCE_PARAM])
+            )
+        if self.LOCATION_PARAM in request.query_params and \
+                request.query_params[self.LOCATION_PARAM]:
+            zone = GEOSGeometry(request.query_params[self.LOCATION_PARAM])
+            filtered_queryset = filtered_queryset.filter(
+                geographic_location__geometry__intersects=zone
             )
         return filtered_queryset
 
