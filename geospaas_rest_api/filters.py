@@ -26,10 +26,9 @@ class DatasetFilter(BaseFilterBackend):
         """
         filtered_queryset = queryset
         if self.DATE_PARAM in request.query_params and request.query_params[self.DATE_PARAM]:
+            date = dateutil_parse(request.query_params[self.DATE_PARAM])
             filtered_queryset = filtered_queryset.filter(
-                time_coverage_start__lte=dateutil_parse(request.query_params[self.DATE_PARAM]),
-                time_coverage_end__gte=dateutil_parse(request.query_params[self.DATE_PARAM])
-            )
+                time_coverage_start__lte=date, time_coverage_end__gte=date)
         if self.SOURCE_PARAM in request.query_params and request.query_params[self.SOURCE_PARAM]:
             filtered_queryset = filtered_queryset.filter(
                 Q(source__platform__short_name__icontains=request.query_params[self.SOURCE_PARAM]) |
