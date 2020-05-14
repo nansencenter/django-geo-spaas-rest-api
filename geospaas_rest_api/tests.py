@@ -278,10 +278,64 @@ class DatasetFilteringTests(TestCase):
             'parameters': []
         }])
 
-    def test_source_filtering(self):
+    def test_source_filtering_instrument_only(self):
+        """Test the filtering of datasets based on a source keyword"""
+        c = Client()
+        response = c.get('//api/datasets/?source=HXT')
+        self.assertListEqual(json.loads(response.content), [{
+            'id': 1,
+            'entry_id': 'NERSC_test_dataset_titusen',
+            'entry_title': 'Test dataset',
+            'summary': 'This is a quite short summary about the test dataset.',
+            'time_coverage_start': '2010-01-01T00:00:00Z',
+            'time_coverage_end': '2010-01-02T00:00:00Z',
+            'access_constraints': None,
+            'ISO_topic_category': 1,
+            'data_center': 1,
+            'source': 1,
+            'geographic_location': 1,
+            'gcmd_location': 1,
+            'parameters': []
+        }, {
+            'id': 2,
+            'entry_id': 'NERSC_test_dataset_tjuetusen',
+            'entry_title': 'Test child dataset',
+            'summary': 'This is a quite short summary about the test dataset.',
+            'time_coverage_start': '2010-01-02T00:00:00Z',
+            'time_coverage_end': '2010-01-03T00:00:00Z',
+            'access_constraints': None,
+            'ISO_topic_category': 1,
+            'data_center': 2,
+            'source': 2,
+            'geographic_location': 2,
+            'gcmd_location': 1,
+            'parameters': []
+        }])
+
+    def test_source_filtering_platform_only(self):
         """Test the filtering of datasets based on a source keyword"""
         c = Client()
         response = c.get('//api/datasets/?source=A340')
+        self.assertListEqual(json.loads(response.content), [{
+            'id': 2,
+            'entry_id': 'NERSC_test_dataset_tjuetusen',
+            'entry_title': 'Test child dataset',
+            'summary': 'This is a quite short summary about the test dataset.',
+            'time_coverage_start': '2010-01-02T00:00:00Z',
+            'time_coverage_end': '2010-01-03T00:00:00Z',
+            'access_constraints': None,
+            'ISO_topic_category': 1,
+            'data_center': 2,
+            'source': 2,
+            'geographic_location': 2,
+            'gcmd_location': 1,
+            'parameters': []
+        }])
+
+    def test_source_filtering_full_name(self):
+        """Test the filtering of datasets based on a source keyword"""
+        c = Client()
+        response = c.get('//api/datasets/?source=A340-600_HXT')
         self.assertListEqual(json.loads(response.content), [{
             'id': 2,
             'entry_id': 'NERSC_test_dataset_tjuetusen',

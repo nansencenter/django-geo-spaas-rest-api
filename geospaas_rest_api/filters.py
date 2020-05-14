@@ -6,7 +6,8 @@ import datetime
 
 import dateutil.parser
 from django.contrib.gis.geos import GEOSGeometry
-from django.db.models import Q
+from django.db.models import Value
+from django.db.models.functions import Concat
 from django.template import loader
 
 from rest_framework.exceptions import ValidationError
@@ -54,10 +55,10 @@ class DatasetFilter(BaseFilterBackend):
             filtered_queryset = filtered_queryset.filter(
                 time_coverage_start__lte=date_range[1], time_coverage_end__gte=date_range[0])
         if self.SOURCE_PARAM in request.query_params and request.query_params[self.SOURCE_PARAM]:
-            filtered_queryset = filtered_queryset.filter(
-                Q(source__platform__short_name__icontains=request.query_params[self.SOURCE_PARAM]) |
-                Q(source__instrument__short_name__icontains=request.query_params[self.SOURCE_PARAM])
-            )
+            source_keyword = request.query_params[self.SOURCE_PARAM]
+            filtered_queryset = filtered_queryset.annotate(source_search_name=Concat(
+                'source__platform__short_name', Value('_'), 'source__instrument__short_name'
+            )).filter(source_search_name__icontains=source_keyword)
         if self.LOCATION_PARAM in request.query_params and \
                 request.query_params[self.LOCATION_PARAM]:
             zone = GEOSGeometry(request.query_params[self.LOCATION_PARAM])

@@ -11,7 +11,7 @@
     "model": "catalog.source",
     "fields": {
         "platform": 2,
-        "instrument": 1,
+        "instrument": 2,
         "specs": "Nothing special"
     }
 },{

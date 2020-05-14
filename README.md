@@ -105,10 +105,12 @@ For example, if the WKT string is `POINT(17.55 78.78)`, the URL would be:
 ### Filtering by source
 
 To filter by source, add the `source` parameter to your GET request to the `datasets` endpoint.
-The request will return all datasets for which the provided source is contained in the dataset's source's name (which is a concatenation of the `instrument` and `platform` properties of the dataset).
+The request will return all datasets for which the provided source is contained in the dataset's source's name (which is a concatenation of the `platform` and `instrument` properties of the source, separated by an underscore).
 
 The value should be a string. The matching is case-insensitive.
 
-For example, to get all VIIRS datasets, the following request can be used:
+For example:
 
-`https://<api_root_url>/datasets?source=viirs`
+- `https://<api_root_url>/datasets?source=viirs` gets all VIIRS datasets
+- `https://<api_root_url>/datasets?source=npp_viirs` gets all VIIRS datasets from the NPP platform
+- `https://<api_root_url>/datasets?source=n20_viirs` gets all VIIRS datasets from the N20 platform
