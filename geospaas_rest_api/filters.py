@@ -1,7 +1,7 @@
 """
 Custom filters for the REST API
 """
-from dateutil.parser import parse as dateutil_parse
+import dateutil.parser
 from django.contrib.gis.geos import GEOSGeometry
 from django.db.models import Q
 from django.template import loader
@@ -26,7 +26,7 @@ class DatasetFilter(BaseFilterBackend):
         """
         filtered_queryset = queryset
         if self.DATE_PARAM in request.query_params and request.query_params[self.DATE_PARAM]:
-            date = dateutil_parse(request.query_params[self.DATE_PARAM])
+            date = dateutil.parser.parse(request.query_params[self.DATE_PARAM])
             filtered_queryset = filtered_queryset.filter(
                 time_coverage_start__lte=date, time_coverage_end__gte=date)
         if self.SOURCE_PARAM in request.query_params and request.query_params[self.SOURCE_PARAM]:
