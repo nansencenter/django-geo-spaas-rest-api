@@ -1,5 +1,7 @@
 __pycache__
+.coverage
+.devcontainer
 .vscode
+**.egg*
 build
 dist
-**.egg*
