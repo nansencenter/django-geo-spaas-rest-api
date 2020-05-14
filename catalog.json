@@ -7,6 +7,14 @@
         "specs": "Nothing special"
     }
 },{
+    "pk": 2,
+    "model": "catalog.source",
+    "fields": {
+        "platform": 2,
+        "instrument": 1,
+        "specs": "Nothing special"
+    }
+},{
     "pk": 1,
     "model": "catalog.geographiclocation",
     "fields": {
@@ -43,7 +51,7 @@
         "time_coverage_end": "2010-01-03T00:00:00Z",
         "time_coverage_start": "2010-01-02T00:00:00Z",
         "summary": "This is a quite short summary about the test dataset.",
-        "source": 1,
+        "source": 2,
         "geographic_location": 2,
         "data_center": 2,
         "gcmd_location": 1,

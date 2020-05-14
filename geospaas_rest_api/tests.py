@@ -126,7 +126,7 @@ class BasicAPITests(TestCase):
 
 
 class DatasetFilteringTests(TestCase):
-    """Tests for filtering"""
+    """Tests dataset filtering based on diverse parameters"""
     fixtures = ["vocabularies", "catalog"]
 
     def test_time_filtering(self):
@@ -144,7 +144,7 @@ class DatasetFilteringTests(TestCase):
             'access_constraints': None,
             'ISO_topic_category': 1,
             'data_center': 2,
-            'source': 1,
+            'source': 2,
             'geographic_location': 2,
             'gcmd_location': 1,
             'parameters': []
@@ -178,7 +178,7 @@ class DatasetFilteringTests(TestCase):
             'access_constraints': None,
             'ISO_topic_category': 1,
             'data_center': 2,
-            'source': 1,
+            'source': 2,
             'geographic_location': 2,
             'gcmd_location': 1,
             'parameters': []
@@ -232,7 +232,7 @@ class DatasetFilteringTests(TestCase):
             'access_constraints': None,
             'ISO_topic_category': 1,
             'data_center': 2,
-            'source': 1,
+            'source': 2,
             'geographic_location': 2,
             'gcmd_location': 1,
             'parameters': []
@@ -278,11 +278,52 @@ class DatasetFilteringTests(TestCase):
             'parameters': []
         }])
 
+    def test_source_filtering(self):
+        """Test the filtering of datasets based on a source keyword"""
+        c = Client()
+        response = c.get('//api/datasets/?source=A340')
+        self.assertListEqual(json.loads(response.content), [{
+            'id': 2,
+            'entry_id': 'NERSC_test_dataset_tjuetusen',
+            'entry_title': 'Test child dataset',
+            'summary': 'This is a quite short summary about the test dataset.',
+            'time_coverage_start': '2010-01-02T00:00:00Z',
+            'time_coverage_end': '2010-01-03T00:00:00Z',
+            'access_constraints': None,
+            'ISO_topic_category': 1,
+            'data_center': 2,
+            'source': 2,
+            'geographic_location': 2,
+            'gcmd_location': 1,
+            'parameters': []
+        }])
+
     def test_zone_and_time_filtering(self):
         """shall return status code 200 for response as well as exact dataset object(s) that
         belongs to specified point of time and a location (POINT in WKT string)"""
         c = Client()
         response = c.get('//api/datasets/?date=2010-01-01T07%3A00%3A00Z&zone=POINT+%289+9%29')
+        self.assertListEqual(json.loads(response.content), [{
+            'id': 1,
+            'entry_id': 'NERSC_test_dataset_titusen',
+            'entry_title': 'Test dataset',
+            'summary': 'This is a quite short summary about the test dataset.',
+            'time_coverage_start': '2010-01-01T00:00:00Z',
+            'time_coverage_end': '2010-01-02T00:00:00Z',
+            'access_constraints': None,
+            'ISO_topic_category': 1,
+            'data_center': 1,
+            'source': 1,
+            'geographic_location': 1,
+            'gcmd_location': 1,
+            'parameters': []
+        }])
+
+    def test_zone_source_and_time_filtering(self):
+        """Test filtering datasets based on time, source and zone simultaneously"""
+        c = Client()
+        response = c.get('//api/datasets/?date=2010-01-01T07%3A00%3A00Z&' +
+                         'zone=POINT+%289+9%29&source=HXT')
         self.assertListEqual(json.loads(response.content), [{
             'id': 1,
             'entry_id': 'NERSC_test_dataset_titusen',
