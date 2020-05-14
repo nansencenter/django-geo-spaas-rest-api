@@ -129,60 +129,51 @@ class DatasetFilteringTests(TestCase):
     """Tests dataset filtering based on diverse parameters"""
     fixtures = ["vocabularies", "catalog"]
 
+    DATASET_DICT_1 = {
+        'id': 1,
+        'entry_id': 'NERSC_test_dataset_titusen',
+        'entry_title': 'Test dataset',
+        'summary': 'This is a quite short summary about the test dataset.',
+        'time_coverage_start': '2010-01-01T00:00:00Z',
+        'time_coverage_end': '2010-01-02T00:00:00Z',
+        'access_constraints': None,
+        'ISO_topic_category': 1,
+        'data_center': 1,
+        'source': 1,
+        'geographic_location': 1,
+        'gcmd_location': 1,
+        'parameters': []
+    }
+
+    DATASET_DICT_2 = {
+        'id': 2,
+        'entry_id': 'NERSC_test_dataset_tjuetusen',
+        'entry_title': 'Test child dataset',
+        'summary': 'This is a quite short summary about the test dataset.',
+        'time_coverage_start': '2010-01-02T00:00:00Z',
+        'time_coverage_end': '2010-01-03T00:00:00Z',
+        'access_constraints': None,
+        'ISO_topic_category': 1,
+        'data_center': 2,
+        'source': 2,
+        'geographic_location': 2,
+        'gcmd_location': 1,
+        'parameters': []
+    }
+
     def test_time_filtering(self):
         """ shall return status code 200 for response as well as exact dataset object(s) that
         has the specified time in its interval"""
         c = Client()
         response = c.get('//api/datasets/?date=2010-01-02T01:00:00Z')
-        self.assertListEqual(json.loads(response.content), [{
-            'id': 2,
-            'entry_id': 'NERSC_test_dataset_tjuetusen',
-            'entry_title': 'Test child dataset',
-            'summary': 'This is a quite short summary about the test dataset.',
-            'time_coverage_start': '2010-01-02T00:00:00Z',
-            'time_coverage_end': '2010-01-03T00:00:00Z',
-            'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 2,
-            'source': 2,
-            'geographic_location': 2,
-            'gcmd_location': 1,
-            'parameters': []
-        }])
+        self.assertListEqual(json.loads(response.content), [self.DATASET_DICT_2])
 
     def test_time_range_filtering(self):
         """Test filtering datasets based on a time range"""
         c = Client()
         response = c.get('//api/datasets/?date=(2010-01-01T01:00:00Z, 2010-01-02T01:00:00Z)')
-        self.assertListEqual(json.loads(response.content), [{
-            'id': 1,
-            'entry_id': 'NERSC_test_dataset_titusen',
-            'entry_title': 'Test dataset',
-            'summary': 'This is a quite short summary about the test dataset.',
-            'time_coverage_start': '2010-01-01T00:00:00Z',
-            'time_coverage_end': '2010-01-02T00:00:00Z',
-            'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 1,
-            'source': 1,
-            'geographic_location': 1,
-            'gcmd_location': 1,
-            'parameters': []
-        }, {
-            'id': 2,
-            'entry_id': 'NERSC_test_dataset_tjuetusen',
-            'entry_title': 'Test child dataset',
-            'summary': 'This is a quite short summary about the test dataset.',
-            'time_coverage_start': '2010-01-02T00:00:00Z',
-            'time_coverage_end': '2010-01-03T00:00:00Z',
-            'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 2,
-            'source': 2,
-            'geographic_location': 2,
-            'gcmd_location': 1,
-            'parameters': []
-        }])
+        self.assertListEqual(json.loads(response.content),
+                             [self.DATASET_DICT_1, self.DATASET_DICT_2])
 
     def test_time_filtering_error_400_on_wrong_date_format(self):
         """
@@ -208,35 +199,8 @@ class DatasetFilteringTests(TestCase):
         """In case a naive date is provided to the filter, it should be considered as UTC time"""
         c = Client()
         response = c.get('//api/datasets/?date=(2010-01-01T01:00:00Z, 2010-01-02T01:00:00)')
-        self.assertListEqual(json.loads(response.content), [{
-            'id': 1,
-            'entry_id': 'NERSC_test_dataset_titusen',
-            'entry_title': 'Test dataset',
-            'summary': 'This is a quite short summary about the test dataset.',
-            'time_coverage_start': '2010-01-01T00:00:00Z',
-            'time_coverage_end': '2010-01-02T00:00:00Z',
-            'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 1,
-            'source': 1,
-            'geographic_location': 1,
-            'gcmd_location': 1,
-            'parameters': []
-        }, {
-            'id': 2,
-            'entry_id': 'NERSC_test_dataset_tjuetusen',
-            'entry_title': 'Test child dataset',
-            'summary': 'This is a quite short summary about the test dataset.',
-            'time_coverage_start': '2010-01-02T00:00:00Z',
-            'time_coverage_end': '2010-01-03T00:00:00Z',
-            'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 2,
-            'source': 2,
-            'geographic_location': 2,
-            'gcmd_location': 1,
-            'parameters': []
-        }])
+        self.assertListEqual(json.loads(response.content),
+                             [self.DATASET_DICT_1, self.DATASET_DICT_2])
 
     def test_zone_filtering(self):
         """shall return status code 200 for response as well as exact dataset object(s) that
@@ -244,155 +208,44 @@ class DatasetFilteringTests(TestCase):
         c = Client()
         response = c.get('//api/datasets/?zone=POINT+%289+9%29')
         # giving a location without SRID
-        self.assertListEqual(json.loads(response.content), [{
-            'id': 1,
-            'entry_id': 'NERSC_test_dataset_titusen',
-            'entry_title': 'Test dataset',
-            'summary': 'This is a quite short summary about the test dataset.',
-            'time_coverage_start': '2010-01-01T00:00:00Z',
-            'time_coverage_end': '2010-01-02T00:00:00Z',
-            'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 1,
-            'source': 1,
-            'geographic_location': 1,
-            'gcmd_location': 1,
-            'parameters': []
-        }])
+        self.assertListEqual(json.loads(response.content), [self.DATASET_DICT_1])
         # giving a location with SRID
         # this example is for SRID=4326;POINT (9 9)
         response2 = c.get('//api/datasets/?zone=SRID%3D4326%3BPOINT+%289+9%29')
-        self.assertListEqual(json.loads(response2.content), [{
-            'id': 1,
-            'entry_id': 'NERSC_test_dataset_titusen',
-            'entry_title': 'Test dataset',
-            'summary': 'This is a quite short summary about the test dataset.',
-            'time_coverage_start': '2010-01-01T00:00:00Z',
-            'time_coverage_end': '2010-01-02T00:00:00Z',
-            'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 1,
-            'source': 1,
-            'geographic_location': 1,
-            'gcmd_location': 1,
-            'parameters': []
-        }])
+        self.assertListEqual(json.loads(response2.content), [self.DATASET_DICT_1])
 
     def test_source_filtering_instrument_only(self):
         """Test the filtering of datasets based on a source keyword"""
         c = Client()
         response = c.get('//api/datasets/?source=HXT')
-        self.assertListEqual(json.loads(response.content), [{
-            'id': 1,
-            'entry_id': 'NERSC_test_dataset_titusen',
-            'entry_title': 'Test dataset',
-            'summary': 'This is a quite short summary about the test dataset.',
-            'time_coverage_start': '2010-01-01T00:00:00Z',
-            'time_coverage_end': '2010-01-02T00:00:00Z',
-            'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 1,
-            'source': 1,
-            'geographic_location': 1,
-            'gcmd_location': 1,
-            'parameters': []
-        }, {
-            'id': 2,
-            'entry_id': 'NERSC_test_dataset_tjuetusen',
-            'entry_title': 'Test child dataset',
-            'summary': 'This is a quite short summary about the test dataset.',
-            'time_coverage_start': '2010-01-02T00:00:00Z',
-            'time_coverage_end': '2010-01-03T00:00:00Z',
-            'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 2,
-            'source': 2,
-            'geographic_location': 2,
-            'gcmd_location': 1,
-            'parameters': []
-        }])
+        self.assertListEqual(json.loads(response.content),
+                             [self.DATASET_DICT_1, self.DATASET_DICT_2])
 
     def test_source_filtering_platform_only(self):
         """Test the filtering of datasets based on a source keyword"""
         c = Client()
         response = c.get('//api/datasets/?source=A340')
-        self.assertListEqual(json.loads(response.content), [{
-            'id': 2,
-            'entry_id': 'NERSC_test_dataset_tjuetusen',
-            'entry_title': 'Test child dataset',
-            'summary': 'This is a quite short summary about the test dataset.',
-            'time_coverage_start': '2010-01-02T00:00:00Z',
-            'time_coverage_end': '2010-01-03T00:00:00Z',
-            'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 2,
-            'source': 2,
-            'geographic_location': 2,
-            'gcmd_location': 1,
-            'parameters': []
-        }])
+        self.assertListEqual(json.loads(response.content), [self.DATASET_DICT_2])
 
     def test_source_filtering_full_name(self):
         """Test the filtering of datasets based on a source keyword"""
         c = Client()
         response = c.get('//api/datasets/?source=A340-600_HXT')
-        self.assertListEqual(json.loads(response.content), [{
-            'id': 2,
-            'entry_id': 'NERSC_test_dataset_tjuetusen',
-            'entry_title': 'Test child dataset',
-            'summary': 'This is a quite short summary about the test dataset.',
-            'time_coverage_start': '2010-01-02T00:00:00Z',
-            'time_coverage_end': '2010-01-03T00:00:00Z',
-            'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 2,
-            'source': 2,
-            'geographic_location': 2,
-            'gcmd_location': 1,
-            'parameters': []
-        }])
+        self.assertListEqual(json.loads(response.content), [self.DATASET_DICT_2])
 
     def test_zone_and_time_filtering(self):
         """shall return status code 200 for response as well as exact dataset object(s) that
         belongs to specified point of time and a location (POINT in WKT string)"""
         c = Client()
         response = c.get('//api/datasets/?date=2010-01-01T07%3A00%3A00Z&zone=POINT+%289+9%29')
-        self.assertListEqual(json.loads(response.content), [{
-            'id': 1,
-            'entry_id': 'NERSC_test_dataset_titusen',
-            'entry_title': 'Test dataset',
-            'summary': 'This is a quite short summary about the test dataset.',
-            'time_coverage_start': '2010-01-01T00:00:00Z',
-            'time_coverage_end': '2010-01-02T00:00:00Z',
-            'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 1,
-            'source': 1,
-            'geographic_location': 1,
-            'gcmd_location': 1,
-            'parameters': []
-        }])
+        self.assertListEqual(json.loads(response.content), [self.DATASET_DICT_1])
 
     def test_zone_source_and_time_filtering(self):
         """Test filtering datasets based on time, source and zone simultaneously"""
         c = Client()
         response = c.get('//api/datasets/?date=2010-01-01T07%3A00%3A00Z&' +
                          'zone=POINT+%289+9%29&source=HXT')
-        self.assertListEqual(json.loads(response.content), [{
-            'id': 1,
-            'entry_id': 'NERSC_test_dataset_titusen',
-            'entry_title': 'Test dataset',
-            'summary': 'This is a quite short summary about the test dataset.',
-            'time_coverage_start': '2010-01-01T00:00:00Z',
-            'time_coverage_end': '2010-01-02T00:00:00Z',
-            'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 1,
-            'source': 1,
-            'geographic_location': 1,
-            'gcmd_location': 1,
-            'parameters': []
-        }])
+        self.assertListEqual(json.loads(response.content), [self.DATASET_DICT_1])
 
 
 class DatasetURIFilteringTests(TestCase):
