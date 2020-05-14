@@ -339,3 +339,21 @@ class DatasetFilteringTests(TestCase):
             'gcmd_location': 1,
             'parameters': []
         }])
+
+
+class DatasetURIFilteringTests(TestCase):
+    """Tests dataset URIs filtering based on diverse parameters"""
+
+    fixtures = ["vocabularies", "catalog"]
+
+    def test_dataset_id_filtering(self):
+        """Test filtering of dataset URIs based on a dataset ID"""
+        c = Client()
+        response = c.get('//api/dataset_uris/?dataset=1')
+        self.assertListEqual(json.loads(response.content), [{
+            "id": 1,
+            "name": "fileService",
+            "service": "local",
+            "uri": "file://localhost/some/test/file1.ext",
+            "dataset": 1
+        }])
