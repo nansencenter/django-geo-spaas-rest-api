@@ -73,16 +73,23 @@ Datasets can be filtered by date, location and source.
 
 These search parameters can be used simultaneously. In that case, the result is equivalent to a logical `and` between all the conditions.
 
+All search parameters containing special characters should be URL-encoded.
+If you use the browsable API, your browser usually takes care of that.
+
 ### Filtering by date
 
 To filter by date, add the `date` parameter to your GET request to the `datasets` endpoint.
 The request will return all datasets for which the provided date is comprised in the time range covered by the dataset.
 
-The value should be a date in a format readable by the [dateutil](https://dateutil.readthedocs.io/en/stable/) Python package, for example `2017-05-18T00:00:00Z`. When provided as a parameter in the URL, it should of course be URL-encoded.
+The value can be:
+  - a date in a format readable by the [dateutil](https://dateutil.readthedocs.io/en/stable/) Python package, for example `2017-05-18T00:00:00Z`.
+  - a couple of such dates defining a time range, for example `(2017-05-18T00:00:00Z, 2017-05-19T00:00:00Z)`
 
 The full URL to filter the datasets with the previous example would be:
 
 `https://<api_root_url>/datasets?date=2017-05-18T00%3A00%3A00Z`
+
+If the time zone is not specified, it is assumed to be UTC.
 
 ### Filtering by location
 

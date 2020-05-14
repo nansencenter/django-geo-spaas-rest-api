@@ -150,6 +150,40 @@ class DatasetFilteringTests(TestCase):
             'parameters': []
         }])
 
+    def test_time_range_filtering(self):
+        """Test filtering datasets based on a time range"""
+        c = Client()
+        response = c.get('//api/datasets/?date=(2010-01-01T01:00:00Z, 2010-01-02T01:00:00Z)')
+        self.assertListEqual(json.loads(response.content), [{
+            'id': 1,
+            'entry_id': 'NERSC_test_dataset_titusen',
+            'entry_title': 'Test dataset',
+            'summary': 'This is a quite short summary about the test dataset.',
+            'time_coverage_start': '2010-01-01T00:00:00Z',
+            'time_coverage_end': '2010-01-02T00:00:00Z',
+            'access_constraints': None,
+            'ISO_topic_category': 1,
+            'data_center': 1,
+            'source': 1,
+            'geographic_location': 1,
+            'gcmd_location': 1,
+            'parameters': []
+        }, {
+            'id': 2,
+            'entry_id': 'NERSC_test_dataset_tjuetusen',
+            'entry_title': 'Test child dataset',
+            'summary': 'This is a quite short summary about the test dataset.',
+            'time_coverage_start': '2010-01-02T00:00:00Z',
+            'time_coverage_end': '2010-01-03T00:00:00Z',
+            'access_constraints': None,
+            'ISO_topic_category': 1,
+            'data_center': 2,
+            'source': 1,
+            'geographic_location': 2,
+            'gcmd_location': 1,
+            'parameters': []
+        }])
+
     def test_zone_filtering(self):
         """shall return status code 200 for response as well as exact dataset object(s) that
         belongs to specified point(with and without specification of SRID)"""
