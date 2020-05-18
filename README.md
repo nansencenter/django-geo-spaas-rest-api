@@ -95,6 +95,15 @@ For example, if the WKT string is `POINT(17.55 78.78)`, the URL would be:
 
 `https://<api_root_url>/datasets?zone=POINT%2817.55+78.78%29`
 
+> *Crossing the international date line:*
+>
+> If you need to search using a polygon which crosses the international date line, you can use longitudes outside the [-180, 180] range.
+>
+> Here is an example for more clarity:  
+> Let us imagine that we are looking for two datasets which spatial coverage is respectively `POLYGON((173 -17,174 -17,174 -20,173 -20,173 -17))` and `POLYGON((-173 -17,-174 -17,-174 -20,-173 -20,-173 -17))`.  
+> `POLYGON((170 -18,190 -18,190 -19,170 -19,170 -18))` intersects both those datasets and can be used to search for them.  
+> On the other hand, `POLYGON((170 -18,-170 -18,-170 -19,170 -19,170 -18))` does not intersect either of these datasets.
+
 ### Filtering by source
 
 To filter by source, add the `source` parameter to your GET request to the `datasets` endpoint.
