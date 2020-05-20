@@ -86,11 +86,16 @@ The value can be:
   - a date in a format readable by the [dateutil](https://dateutil.readthedocs.io/en/stable/) Python package, for example `2017-05-18T00:00:00Z`.
   - a couple of such dates defining a time range, for example `(2017-05-18T00:00:00Z, 2017-05-19T00:00:00Z)`
 
+The search is inclusive. For example:
+  - a search using `date=2017-05-18T00:00:00Z` will include the datasets for which `time_coverage_start` or `time_coverage_end` is equal to `2017-05-18T00:00:00Z`.
+  - a search using `date=(2017-05-18T00:00:00Z, 2017-05-19T00:00:00Z)` will include datasets for which `time_coverage_start` = `2017-05-19T00:00:00Z` as well as those for which `time_coverage_end` = `2017-05-18T00:00:00Z`.
+
 The full URL to filter the datasets with the previous example would be:
 
 `https://<api_root_url>/datasets?date=2017-05-18T00%3A00%3A00Z`
 
 If the time zone is not specified, it is assumed to be UTC.
+
 
 ### Filtering by location
 
