@@ -29,7 +29,7 @@ For example, `https://<api_root_url>/datasets` returns a paginated list of the d
 Objects can be also be accessed by id: `https://<api_root_url>/sources/2` returns the JSON representation of the source which id is 2.
 Django REST framework provides a browsable API, so all this data can be visualized and explored in a browser, in JSON format.
 
-Basic dataset filtering capabilities are implemented. It is possible to filter datasets based on date, location and source. See the **[Searching for datasets](##Searching-for-datasets)** section.
+Basic dataset filtering capabilities are implemented. It is possible to filter datasets based on date, location and source. See the **[Searching for datasets](#searching-for-datasets)** section.
 
 ## Data representation
 
