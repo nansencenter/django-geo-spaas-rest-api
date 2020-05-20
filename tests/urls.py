@@ -1,4 +1,4 @@
-  
+
 from django.conf.urls import include
 from django.conf import settings
 """geospaas_project URL Configuration
@@ -20,7 +20,7 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^', include('geospaas.urls')),
-    url(r'^', include('geospaas_rest_api.urls')),
+    url(r'^api/', include('geospaas_rest_api.urls')),
 ]
 if settings.DEBUG:
     from django.conf.urls.static import static

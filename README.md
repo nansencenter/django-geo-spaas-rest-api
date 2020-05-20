@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/nansencenter/django-geo-spaas-rest-api.svg?branch=master)](https://travis-ci.org/nansencenter/django-geo-spaas-rest-api) [![Coverage Status](https://coveralls.io/repos/github/nansencenter/django-geo-spaas-rest-api/badge.svg?branch=master)](https://coveralls.io/github/nansencenter/django-geo-spaas-rest-api?branch=master)
 # REST API for django-geo-spaas
 
 `geospaas_rest_api` is a Django application which provides a REST API for the [GeoSPaaS application](https://github.com/nansencenter/django-geo-spaas).
@@ -73,16 +74,23 @@ Datasets can be filtered by date, location and source.
 
 These search parameters can be used simultaneously. In that case, the result is equivalent to a logical `and` between all the conditions.
 
+All search parameters containing special characters should be URL-encoded.
+If you use the browsable API, your browser usually takes care of that.
+
 ### Filtering by date
 
 To filter by date, add the `date` parameter to your GET request to the `datasets` endpoint.
 The request will return all datasets for which the provided date is comprised in the time range covered by the dataset.
 
-The value should be a date in a format readable by the [dateutil](https://dateutil.readthedocs.io/en/stable/) Python package, for example `2017-05-18T00:00:00Z`. When provided as a parameter in the URL, it should of course be URL-encoded.
+The value can be:
+  - a date in a format readable by the [dateutil](https://dateutil.readthedocs.io/en/stable/) Python package, for example `2017-05-18T00:00:00Z`.
+  - a couple of such dates defining a time range, for example `(2017-05-18T00:00:00Z, 2017-05-19T00:00:00Z)`
 
 The full URL to filter the datasets with the previous example would be:
 
 `https://<api_root_url>/datasets?date=2017-05-18T00%3A00%3A00Z`
+
+If the time zone is not specified, it is assumed to be UTC.
 
 ### Filtering by location
 
@@ -98,10 +106,12 @@ For example, if the WKT string is `POINT(17.55 78.78)`, the URL would be:
 ### Filtering by source
 
 To filter by source, add the `source` parameter to your GET request to the `datasets` endpoint.
-The request will return all datasets for which the provided source is contained in the dataset's source's name (which is a concatenation of the `instrument` and `platform` properties of the dataset).
+The request will return all datasets for which the provided source is contained in the dataset's source's name (which is a concatenation of the `platform` and `instrument` properties of the source, separated by an underscore).
 
 The value should be a string. The matching is case-insensitive.
 
-For example, to get all VIIRS datasets, the following request can be used:
+For example:
 
-`https://<api_root_url>/datasets?source=viirs`
+- `https://<api_root_url>/datasets?source=viirs` gets all VIIRS datasets
+- `https://<api_root_url>/datasets?source=npp_viirs` gets all VIIRS datasets from the NPP platform
+- `https://<api_root_url>/datasets?source=n20_viirs` gets all VIIRS datasets from the N20 platform
