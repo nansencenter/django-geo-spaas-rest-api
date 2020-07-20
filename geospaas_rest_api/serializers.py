@@ -1,106 +1,85 @@
 """
 Serializers for the GeoSPaaS REST API
 """
-from geospaas.catalog.models import (Dataset, DatasetRelationship, DatasetURI,
-                                     GeographicLocation, Personnel, Role, Source)
-from geospaas.vocabularies.models import DataCenter, Instrument, Parameter, Platform
-from rest_framework import serializers
+import geospaas.catalog.models
+import geospaas.vocabularies.models
+import rest_framework.serializers
 
 
-class GeographicLocationSerializer(serializers.ModelSerializer):
-    """
-    Serializer for GeographicLocation objects
-    """
+class GeographicLocationSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for GeographicLocation objects"""
     class Meta:
-        model = GeographicLocation
+        model = geospaas.catalog.models.GeographicLocation
         fields = '__all__'
 
 
-class SourceSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Source objects
-    """
+class SourceSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for Source objects"""
     class Meta:
-        model = Source
+        model = geospaas.catalog.models.Source
         fields = '__all__'
 
 
-class InstrumentSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Instrument objects
-    """
+class InstrumentSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for Instrument objects"""
     class Meta:
-        model = Instrument
+        model = geospaas.vocabularies.models.Instrument
         fields = '__all__'
 
 
-class PlatformSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Source objects
-    """
+class PlatformSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for Source objects"""
     class Meta:
-        model = Platform
+        model = geospaas.vocabularies.models.Platform
         fields = '__all__'
 
 
-class PersonnelSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Personnel objects
-    """
+class PersonnelSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for Personnel objects"""
     class Meta:
-        model = Personnel
+        model = geospaas.catalog.models.Personnel
         fields = '__all__'
 
 
-class RoleSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Role objects
-    """
+class RoleSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for Role objects"""
     class Meta:
-        model = Role
+        model = geospaas.catalog.models.Role
         fields = '__all__'
 
 
-class DatasetSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Dataset objects
-    """
+class DatasetSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for Dataset objects"""
     class Meta:
-        model = Dataset
+        model = geospaas.catalog.models.Dataset
         fields = '__all__'
 
 
-class ParameterSerializer(serializers.ModelSerializer):
+class ParameterSerializer(rest_framework.serializers.ModelSerializer):
     """
     Serializer for Parameter objects
     """
     class Meta:
-        model = Parameter
+        model = geospaas.vocabularies.models.Parameter
         fields = '__all__'
 
 
-class DatasetURISerializer(serializers.ModelSerializer):
-    """
-    Serializer for DatasetURI objects
-    """
+class DatasetURISerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for DatasetURI objects"""
     class Meta:
-        model = DatasetURI
+        model = geospaas.catalog.models.DatasetURI
         fields = '__all__'
 
 
-class DatasetRelationshipSerializer(serializers.ModelSerializer):
-    """
-    Serializer for DatasetRelationship objects
-    """
+class DatasetRelationshipSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for DatasetRelationship objects"""
     class Meta:
-        model = DatasetRelationship
+        model = geospaas.catalog.models.DatasetRelationship
         fields = '__all__'
 
 
-class DataCenterSerializer(serializers.ModelSerializer):
-    """
-    Serializer for DataCenter objects
-    """
+class DataCenterSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for DataCenter objects"""
     class Meta:
-        model = DataCenter
+        model = geospaas.vocabularies.models.DataCenter
         fields = '__all__'
