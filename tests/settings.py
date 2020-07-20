@@ -26,7 +26,8 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.messages',
-    'geospaas_rest_api'
+    'geospaas_rest_api',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [

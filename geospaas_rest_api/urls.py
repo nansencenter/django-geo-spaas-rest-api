@@ -13,6 +13,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import os
+
 from rest_framework import routers
 from geospaas_rest_api import views
 
@@ -30,5 +32,7 @@ router.register(r'dataset_parameters', views.DatasetParameterViewSet)
 router.register(r'dataset_uris', views.DatasetURIViewSet)
 router.register(r'dataset_relationships', views.DatasetRelationshipViewSet)
 router.register(r'datacenters', views.DataCenterViewSet)
+if os.environ.get('GEOSPAAS_REST_API_ENABLE_PROCESSING', 'false').lower() == 'true':
+    router.register(r'tasks', views.TaskViewSet)
 
 urlpatterns = router.urls

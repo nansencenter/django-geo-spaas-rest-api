@@ -2,7 +2,7 @@
 language: shell
 
 env:
-  - IMAGE_NAME="${DOCKER_ORG}/geospaas_api"
+  - IMAGE_NAME="${DOCKER_ORG}/geospaas_rest_api_tests"
 
 services: docker
 
