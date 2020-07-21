@@ -3,9 +3,10 @@ import json
 import os
 import unittest.mock as mock
 
+import django.test
 from django.http import Http404
 from django.http.request import HttpRequest
-from django.test import Client, TestCase
+from django.test import Client
 from django_celery_results.models import TaskResult
 from rest_framework.request import Request
 from rest_framework.exceptions import ErrorDetail, ValidationError
@@ -17,7 +18,7 @@ import geospaas_rest_api.views as views
 os.environ.setdefault('GEOSPAAS_REST_API_ENABLE_PROCESSING', 'true')
 
 
-class BasicAPITests(TestCase):
+class BasicAPITests(django.test.TestCase):
     """Basic API testing to receive 200 responses and some exact responses"""
     fixtures = ["vocabularies", "catalog"]
 
@@ -139,7 +140,7 @@ class BasicAPITests(TestCase):
         })
 
 
-class DatasetFilteringTests(TestCase):
+class DatasetFilteringTests(django.test.TestCase):
     """Tests dataset filtering based on diverse parameters"""
     fixtures = ["vocabularies", "catalog"]
 
@@ -262,7 +263,7 @@ class DatasetFilteringTests(TestCase):
         self.assertListEqual(json.loads(response.content), [self.DATASET_DICT_1])
 
 
-class DatasetURIFilteringTests(TestCase):
+class DatasetURIFilteringTests(django.test.TestCase):
     """Tests dataset URIs filtering based on diverse parameters"""
 
     fixtures = ["vocabularies", "catalog"]
@@ -280,7 +281,7 @@ class DatasetURIFilteringTests(TestCase):
         }])
 
 
-class TaskViewSetTests(TestCase):
+class TaskViewSetTests(django.test.TestCase):
     """Test tasks endpoints"""
 
     fixtures = ['datasets', 'tasks']
@@ -430,7 +431,7 @@ class TaskViewSetTests(TestCase):
                 )
 
 
-class TaskResultSerializerTests(TestCase):
+class TaskResultSerializerTests(django.test.TestCase):
     """Tests for the TaskResultSerializer"""
 
     fixtures = ['tasks.json']
