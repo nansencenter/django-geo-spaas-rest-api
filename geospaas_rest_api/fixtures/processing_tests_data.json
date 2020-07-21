@@ -219,5 +219,81 @@
             "gcmd_location": 1,
             "access_constraints": null
         }
+    },
+    {
+        "model": "django_celery_results.taskresult",
+        "pk": 1,
+        "fields": {
+            "task_id": "df2bfb58-7d2e-4f83-9dc2-bac95a421c71",
+            "task_name": "geospaas_processing.tasks.download",
+            "task_args": "(1,)",
+            "task_kwargs": "{}",
+            "status": "STARTED",
+            "worker": "celery@3b6b6202fcbe",
+            "content_type": "application/json",
+            "content_encoding": "utf-8",
+            "result": "{\"pid\": 22, \"hostname\": \"celery@3b6b6202fcbe\"}",
+            "date_created": "2020-07-16T13:52:33.864Z",
+            "date_done": "2020-07-16T13:52:33.864Z",
+            "traceback": null,
+            "meta": "{\"children\": []}"
+        }
+    },
+    {
+        "model": "django_celery_results.taskresult",
+        "pk": 2,
+        "fields": {
+            "task_id": "df2bfb58-7d2e-4f83-9dc2-bac95a421c72",
+            "task_name": "geospaas_processing.tasks.download",
+            "task_args": "(1,)",
+            "task_kwargs": "{}",
+            "status": "SUCCESS",
+            "worker": "celery@3b6b6202fcbe",
+            "content_type": "application/json",
+            "content_encoding": "utf-8",
+            "result": "[1, \"ftp://test/dataset_1_S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.zip\"]",
+            "date_created": "2020-07-16T13:53:33.864Z",
+            "date_done": "2020-07-16T13:57:21.912Z",
+            "traceback": null,
+            "meta": "{\"children\": [[[\"733d3a63-7a5a-4a1e-8cf0-750ae393dd98\", null], null]]}"
+        }
+    },
+    {
+        "model": "django_celery_results.taskresult",
+        "pk": 3,
+        "fields": {
+            "task_id": "733d3a63-7a5a-4a1e-8cf0-750ae393dd98",
+            "task_name": "geospaas_processing.tasks.convert_to_idf",
+            "task_args": "((1, 'ftp://test/dataset_1_S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.zip'),)",
+            "task_kwargs": "{}",
+            "status": "STARTED",
+            "worker": "celery@3b6b6202fcbe",
+            "content_type": "application/json",
+            "content_encoding": "utf-8",
+            "result": "{\"pid\": 23, \"hostname\": \"celery@3b6b6202fcbe\"}",
+            "date_created": "2020-07-16T13:57:21.918Z",
+            "date_done": "2020-07-16T13:57:21.918Z",
+            "traceback": null,
+            "meta": "{\"children\": []}"
+        }
+    },
+    {
+        "model": "django_celery_results.taskresult",
+        "pk": 4,
+        "fields": {
+            "task_id": "733d3a63-7a5a-4a1e-8cf0-750ae393dd99",
+            "task_name": "geospaas_processing.tasks.convert_to_idf",
+            "task_args": "((1, 'ftp://test/dataset_1_S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.zip'),)",
+            "task_kwargs": "{}",
+            "status": "SUCCESS",
+            "worker": "celery@3b6b6202fcbe",
+            "content_type": "application/json",
+            "content_encoding": "utf-8",
+            "result": "[1, \"ftp://test/sentinel3_olci_l1_efr/S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.SEN3\"]",
+            "date_created": "2020-07-16T13:58:22.918Z",
+            "date_done": "2020-07-16T13:58:21.201Z",
+            "traceback": null,
+            "meta": "{\"children\": []}"
+        }
     }
 ]
