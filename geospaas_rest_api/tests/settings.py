@@ -37,7 +37,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
 ]
 
-ROOT_URLCONF = 'tests.urls'
+ROOT_URLCONF = 'geospaas_rest_api.tests.urls'
 
 TEMPLATES = [
     {

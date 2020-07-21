@@ -23,7 +23,7 @@ script:
     -v "$(pwd):/src"
     $IMAGE_NAME
     bash -c "source /opt/conda/bin/activate &&
-    coverage run --source=geospaas_rest_api --omit=*/tests.py runtests.py && coveralls"
+    coverage run --source=geospaas_rest_api --omit='geospaas_rest_api/tests/*' runtests.py && coveralls"
 
 # If the build is triggered by a tag and an API token is defined for the branch
 # (in the travis repository settings), a package is built and added to the release
