@@ -1,5 +1,4 @@
 """Tests for the GeoSPaaS REST API"""
-import json
 import os
 import unittest.mock as mock
 
@@ -32,7 +31,7 @@ class BasicAPITests(django.test.TestCase):
         """
         response2 = self.client.get('/api/geographic_locations/')
         self.assertEqual(response2.status_code, 200)
-        self.assertListEqual(json.loads(response2.content), [
+        self.assertJSONEqual(response2.content, [
             {'id': 1, 'geometry': 'SRID=4326;POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0))'},
             {'id': 2, 'geometry': 'SRID=4326;POLYGON ((20 20, 20 30, 30 30, 30 20, 20 20))'}
         ])
@@ -41,14 +40,14 @@ class BasicAPITests(django.test.TestCase):
         """shall return status code 200 for source as well as exact source object"""
         response3 = self.client.get('/api/sources/1/')
         self.assertEqual(response3.status_code, 200)
-        self.assertDictEqual(json.loads(response3.content),
+        self.assertJSONEqual(response3.content,
                              {'id': 1, 'specs': 'Nothing special', 'platform': 1, 'instrument': 2})
 
     def test_instruments_call(self):
         """shall return status code 200 for instruments as well as exact instrument object"""
         response4 = self.client.get('/api/instruments/2/')
         self.assertEqual(response4.status_code, 200)
-        self.assertDictEqual(json.loads(response4.content), {
+        self.assertJSONEqual(response4.content, {
             'id': 2, 'category': 'Solar/Space Observing Instruments',
             'instrument_class': 'X-Ray/Gamma Ray Detectors',
             'type': 'dummy_included_in_test_mode',
@@ -61,7 +60,7 @@ class BasicAPITests(django.test.TestCase):
         """shall return status code 200 for platforms as well as exact platform object"""
         response5 = self.client.get('/api/platforms/2/')
         self.assertEqual(response5.status_code, 200)
-        self.assertDictEqual(json.loads(response5.content), {
+        self.assertJSONEqual(response5.content, {
             'id': 2, 'category': 'Aircraft',
             'series_entity': 'dummy_included_in_test_mode',
             'short_name': 'A340-600',
@@ -82,7 +81,7 @@ class BasicAPITests(django.test.TestCase):
         """shall return status code 200 for datasets as well as exact dataset object"""
         response8 = self.client.get('/api/datasets/1/')
         self.assertEqual(response8.status_code, 200)
-        self.assertDictEqual(json.loads(response8.content), {
+        self.assertJSONEqual(response8.content, {
             'id': 1,
             'entry_id': 'NERSC_test_dataset_titusen',
             'entry_title': 'Test dataset',
@@ -107,7 +106,7 @@ class BasicAPITests(django.test.TestCase):
         """shall return status code 200 for dataset_uri as well as exact dataset_uri object"""
         response10 = self.client.get('/api/dataset_uris/2/')
         self.assertEqual(response10.status_code, 200)
-        self.assertDictEqual(json.loads(response10.content), {
+        self.assertJSONEqual(response10.content, {
             'id': 2,
             'name': 'fileService',
             'service': 'local',
@@ -124,7 +123,7 @@ class BasicAPITests(django.test.TestCase):
         """shall return status code 200 for datacenters as well as exact datacenter object"""
         response12 = self.client.get('/api/datacenters/2/')
         self.assertEqual(response12.status_code, 200)
-        self.assertDictEqual(json.loads(response12.content), {
+        self.assertJSONEqual(response12.content, {
             'id': 2,
             'bucket_level0': 'ACADEMIC',
             'bucket_level1': 'dummy_included_in_test_mode',
@@ -176,13 +175,13 @@ class DatasetFilteringTests(django.test.TestCase):
         """ shall return status code 200 for response as well as exact dataset object(s) that
         has the specified time in its interval"""
         response = self.client.get('/api/datasets/?date=2010-01-02T01:00:00Z')
-        self.assertListEqual(json.loads(response.content), [self.DATASET_DICT_2])
+        self.assertJSONEqual(response.content, [self.DATASET_DICT_2])
 
     def test_time_range_filtering(self):
         """Test filtering datasets based on a time range"""
         response = self.client.get(
             '/api/datasets/?date=(2010-01-01T01:00:00Z, 2010-01-02T01:00:00Z)')
-        self.assertListEqual(json.loads(response.content),
+        self.assertJSONEqual(response.content,
                              [self.DATASET_DICT_1, self.DATASET_DICT_2])
 
     def test_time_filtering_error_400_on_wrong_date_format(self):
@@ -191,7 +190,7 @@ class DatasetFilteringTests(django.test.TestCase):
         """
         response = self.client.get('/api/datasets/?date=2010-01-02T01:00:Z')
         self.assertEqual(response.status_code, 400)
-        self.assertListEqual(json.loads(response.content), ["Wrong date format"])
+        self.assertJSONEqual(response.content, ["Wrong date format"])
 
     def test_time_filtering_error_400_on_invalid_range(self):
         """
@@ -201,14 +200,14 @@ class DatasetFilteringTests(django.test.TestCase):
         response = self.client.get(
             '/api/datasets/?date=(2010-01-03T01:00:00Z, 2010-01-02T01:00:00Z)')
         self.assertEqual(response.status_code, 400)
-        self.assertListEqual(json.loads(response.content),
+        self.assertJSONEqual(response.content,
                              ["The first date in the range should be inferior to the second one"])
 
     def test_time_filtering_with_naive_datetime(self):
         """In case a naive date is provided to the filter, it should be considered as UTC time"""
         response = self.client.get(
             '/api/datasets/?date=(2010-01-01T01:00:00Z, 2010-01-02T01:00:00)')
-        self.assertListEqual(json.loads(response.content),
+        self.assertJSONEqual(response.content,
                              [self.DATASET_DICT_1, self.DATASET_DICT_2])
 
     def test_zone_filtering(self):
@@ -216,40 +215,40 @@ class DatasetFilteringTests(django.test.TestCase):
         belongs to specified point(with and without specification of SRID)"""
         response = self.client.get('/api/datasets/?zone=POINT+%289+9%29')
         # giving a location without SRID
-        self.assertListEqual(json.loads(response.content), [self.DATASET_DICT_1])
+        self.assertJSONEqual(response.content, [self.DATASET_DICT_1])
         # giving a location with SRID
         # this example is for SRID=4326;POINT (9 9)
         response2 = self.client.get('/api/datasets/?zone=SRID%3D4326%3BPOINT+%289+9%29')
-        self.assertListEqual(json.loads(response2.content), [self.DATASET_DICT_1])
+        self.assertJSONEqual(response2.content, [self.DATASET_DICT_1])
 
     def test_source_filtering_instrument_only(self):
         """Test the filtering of datasets based on a source keyword"""
         response = self.client.get('/api/datasets/?source=HXT')
-        self.assertListEqual(json.loads(response.content),
+        self.assertJSONEqual(response.content,
                              [self.DATASET_DICT_1, self.DATASET_DICT_2])
 
     def test_source_filtering_platform_only(self):
         """Test the filtering of datasets based on a source keyword"""
         response = self.client.get('/api/datasets/?source=A340')
-        self.assertListEqual(json.loads(response.content), [self.DATASET_DICT_2])
+        self.assertJSONEqual(response.content, [self.DATASET_DICT_2])
 
     def test_source_filtering_full_name(self):
         """Test the filtering of datasets based on a source keyword"""
         response = self.client.get('/api/datasets/?source=A340-600_HXT')
-        self.assertListEqual(json.loads(response.content), [self.DATASET_DICT_2])
+        self.assertJSONEqual(response.content, [self.DATASET_DICT_2])
 
     def test_zone_and_time_filtering(self):
         """shall return status code 200 for response as well as exact dataset object(s) that
         belongs to specified point of time and a location (POINT in WKT string)"""
         response = self.client.get(
             '/api/datasets/?date=2010-01-01T07%3A00%3A00Z&zone=POINT+%289+9%29')
-        self.assertListEqual(json.loads(response.content), [self.DATASET_DICT_1])
+        self.assertJSONEqual(response.content, [self.DATASET_DICT_1])
 
     def test_zone_source_and_time_filtering(self):
         """Test filtering datasets based on time, source and zone simultaneously"""
         response = self.client.get('/api/datasets/?date=2010-01-01T07%3A00%3A00Z&' +
                                    'zone=POINT+%289+9%29&source=HXT')
-        self.assertListEqual(json.loads(response.content), [self.DATASET_DICT_1])
+        self.assertJSONEqual(response.content, [self.DATASET_DICT_1])
 
 
 class DatasetURIFilteringTests(django.test.TestCase):
@@ -260,7 +259,7 @@ class DatasetURIFilteringTests(django.test.TestCase):
     def test_dataset_id_filtering(self):
         """Test filtering of dataset URIs based on a dataset ID"""
         response = self.client.get('/api/dataset_uris/?dataset=1')
-        self.assertListEqual(json.loads(response.content), [{
+        self.assertJSONEqual(response.content, [{
             "id": 1,
             "name": "fileService",
             "service": "local",
@@ -388,8 +387,7 @@ class TaskViewSetTests(django.test.TestCase):
                 'meta': {'children': []}
             }
         ]
-        tasks = json.loads(self.client.get('/api/tasks/').content)
-        self.assertListEqual(tasks, expected_tasks)
+        self.assertJSONEqual(self.client.get('/api/tasks/').content, expected_tasks)
 
     def test_get_task(self):
         """Test that a single task can be retrieved"""
@@ -404,8 +402,7 @@ class TaskViewSetTests(django.test.TestCase):
             'meta': {'children': []}
         }
         response = self.client.get('/api/tasks/df2bfb58-7d2e-4f83-9dc2-bac95a421c71/')
-        task = json.loads(response.content)
-        self.assertDictEqual(task, expected_task)
+        self.assertJSONEqual(response.content, expected_task)
 
     def test_get_pending_status_from_celery(self):
         """Get tasks status from celery if it is not available in the database yet"""
