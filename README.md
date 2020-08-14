@@ -9,8 +9,9 @@ This API is based on [Django REST framework](https://www.django-rest-framework.o
 
 ## Functionalities
 
-For now the API provides read-only functionalities. 
-It provides endpoints to list the following objects stored in a GeoSPaaS database:
+### GeoSPaaS data access
+
+This API provides endpoints to list the following objects stored in a GeoSPaaS database:
   - geographic_locations
   - sources
   - instruments
@@ -30,6 +31,14 @@ Objects can be also be accessed by id: `https://<api_root_url>/sources/2` return
 Django REST framework provides a browsable API, so all this data can be visualized and explored in a browser, in JSON format.
 
 Basic dataset filtering capabilities are implemented. It is possible to filter datasets based on date, location and source. See the **[Searching for datasets](#searching-for-datasets)** section.
+
+
+### Processing
+
+The `/tasks/` endpoint offers the ability to trigger processing tasks based on GeoSPaaS data.
+
+For now, the only available operation is downloading datasets to the server where the API is running.
+Then, they can then be made available via FTP, for example.
 
 ## Data representation
 
@@ -129,3 +138,35 @@ For example:
 - `https://<api_root_url>/datasets?source=viirs` gets all VIIRS datasets
 - `https://<api_root_url>/datasets?source=npp_viirs` gets all VIIRS datasets from the NPP platform
 - `https://<api_root_url>/datasets?source=n20_viirs` gets all VIIRS datasets from the N20 platform
+
+## Triggering tasks
+
+### Downloading datasets
+
+A download task is launched by sending a POST request to the `/tasks/` endpoint with the following payload:
+
+```json
+{
+    "action": "download",
+    "parameters": {"dataset_id": <dataset_id>}
+}
+```
+
+Where `<dataset_id>` is the id of the dataset to download.
+It can be obtained using the search capabilities of the `/datasets/` endpoint.
+
+The server answers with the link to the task that has been launched, for example:
+
+`https://<api_root_url>/tasks/025ed3b6-0924-4da4-8803-a778f4e7bb65`
+
+This link can then be polled to get the status of the task. This status can be:
+- `STARTED`: the task is currently executing
+- `SUCCESS`: the task finished successfully
+- `RETRY`: the task will be retried later, for example if the limit of parallel downloads for a data
+  provider has been reached
+- `FAILED`: the task failed
+
+Once the task is over, the **"result"** attribute of the task is set with a two-elements list.
+- the first element is the ID of the dataset that was downloaded
+  (this enables to easily chain tasks together)
+- the second element is the link where the dataset can be downloaded
