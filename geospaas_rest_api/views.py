@@ -5,12 +5,18 @@ import django.http
 import django_celery_results.models
 import geospaas.catalog.models
 import geospaas.vocabularies.models
+from rest_framework.pagination import CursorPagination
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 import geospaas_rest_api.filters as filters
 import geospaas_rest_api.serializers as serializers
+
+
+class PKOrderedCursorPagination(CursorPagination):
+    ordering = 'pk'
+    page_size = 100
 
 
 class TaskViewSet(ReadOnlyModelViewSet):
