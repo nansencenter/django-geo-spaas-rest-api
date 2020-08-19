@@ -1,5 +1,12 @@
 """Tests for the read-only part of the GeoSPaaS REST API"""
+import unittest.mock as mock
+
 import django.test
+import rest_framework.request
+import rest_framework.views
+
+import geospaas_rest_api.filters
+import geospaas_rest_api.views
 
 
 class BasicAPITests(django.test.TestCase):
@@ -233,8 +240,62 @@ class DatasetFilteringTests(django.test.TestCase):
     def test_zone_source_and_time_filtering(self):
         """Test filtering datasets based on time, source and zone simultaneously"""
         response = self.client.get('/api/datasets/?date=2010-01-01T07%3A00%3A00Z&' +
-                         'zone=POINT+%289+9%29&source=HXT')
+                                   'zone=POINT+%289+9%29&source=HXT')
         self.assertJSONEqual(response.content, [self.DATASET_DICT_1])
+
+
+class BrowsableAPIFilterRenderingContext(django.test.TestCase):
+    """Test that the correct context is used when rendering filters in the browsable API"""
+    def setUp(self):
+        self.request_mock = mock.MagicMock(spec=rest_framework.request.Request)
+        self.view_mock = mock.MagicMock(spec=rest_framework.views.View)
+        self.queryset = geospaas_rest_api.views.DatasetViewSet.queryset
+
+        self.filter = geospaas_rest_api.filters.DatasetFilter()
+
+        self.params_list = [
+            self.filter.DATE_PARAM, self.filter.LOCATION_PARAM, self.filter.SOURCE_PARAM]
+
+        self.mock_render = mock.patch('django.template.backends.django.Template.render').start()
+        self.addCleanup(mock.patch.stopall)
+
+    def test_filter_without_params(self):
+        """No parameters in the request"""
+        self.filter.to_html(self.request_mock, self.queryset, self.view_mock)
+        self.mock_render.assert_called_with({'params': self.params_list, 'terms': ['', '', '']})
+
+    def test_filter_with_date(self):
+        """The date parameter is present in the request"""
+        self.request_mock.query_params = {
+            self.filter.DATE_PARAM: 'test_date'
+        }
+        self.filter.to_html(self.request_mock, self.queryset, self.view_mock)
+        self.mock_render.assert_called_with({
+            'params': self.params_list,
+            'terms': ['test_date', '', '']
+        })
+
+    def test_filter_with_location(self):
+        """The location parameter is present in the request"""
+        self.request_mock.query_params = {
+            self.filter.LOCATION_PARAM: 'test_location'
+        }
+        self.filter.to_html(self.request_mock, self.queryset, self.view_mock)
+        self.mock_render.assert_called_with({
+            'params': self.params_list,
+            'terms': ['', 'test_location', '']
+        })
+
+    def test_filter_with_source(self):
+        """The source parameter is present in the request"""
+        self.request_mock.query_params = {
+            self.filter.SOURCE_PARAM: 'test_source'
+        }
+        self.filter.to_html(self.request_mock, self.queryset, self.view_mock)
+        self.mock_render.assert_called_with({
+            'params': self.params_list,
+            'terms': ['', '', 'test_source']
+        })
 
 
 class DatasetURIFilteringTests(django.test.TestCase):
