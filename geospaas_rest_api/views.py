@@ -1,24 +1,24 @@
 """Views for the GeoSPaaS REST API"""
-import celery
-import celery.result
 import django.http
 import django_celery_results.models
 import geospaas.catalog.models
 import geospaas.vocabularies.models
+import rest_framework.mixins
 from rest_framework.pagination import CursorPagination
-from rest_framework.response import Response
-from rest_framework.reverse import reverse
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 
 import geospaas_rest_api.filters as filters
+import geospaas_rest_api.models as models
 import geospaas_rest_api.serializers as serializers
 
 
-class TaskViewSet(ReadOnlyModelViewSet):
-    """API endpoint to manage long running tasks"""
-    queryset = django_celery_results.models.TaskResult.objects.all().order_by('-date_created')
-    lookup_field = 'task_id'
-    serializer_class = serializers.TaskResultSerializer
+class JobViewSet(rest_framework.mixins.CreateModelMixin,
+                 rest_framework.mixins.ListModelMixin,
+                 rest_framework.mixins.RetrieveModelMixin,
+                 GenericViewSet):
+    """API endpoint to manage long running jobs"""
+    queryset = models.Job.objects.all().order_by('-id')
+    serializer_class = serializers.JobSerializer
 
     def __init__(self, **kwargs):
         """
@@ -30,27 +30,12 @@ class TaskViewSet(ReadOnlyModelViewSet):
             raise django.http.Http404()
         super().__init__(**kwargs)
 
-    def create(self, request, *args, **kwargs):  # pylint: disable=unused-argument
-        """Launches long running tasks using the TaskResultSerializer"""
-        serializer = serializers.TaskResultSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        result = serializer.save()
-        task_url = reverse('taskresult-detail', args=[result.id], request=request)
-        return Response(status=202, data={'task_url': task_url})
 
-    def retrieve(self, request, *args, **kwargs):
-        """
-        Get the task status from the database if it is in progress,
-        otherwise get it from the Celery app.
-        Drawback: tasks which do not exist are indicated as "PENDING".
-        """
-        try:
-            instance = self.get_object()
-        except django.http.Http404:
-            result = celery.result.AsyncResult(self.kwargs['task_id'])
-            return Response(data={'status': result.status}, status=200)
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+class TaskViewSet(ReadOnlyModelViewSet):
+    """API endpoint to manage long running tasks"""
+    queryset = django_celery_results.models.TaskResult.objects.all().order_by('-date_created')
+    lookup_field = 'task_id'
+    serializer_class = serializers.TaskResultSerializer
 
 
 class GeographicLocationViewSet(ReadOnlyModelViewSet):

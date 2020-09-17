@@ -34,5 +34,6 @@ router.register(r'dataset_relationships', views.DatasetRelationshipViewSet)
 router.register(r'datacenters', views.DataCenterViewSet)
 if os.environ.get('GEOSPAAS_REST_API_ENABLE_PROCESSING', 'false').lower() == 'true':
     router.register(r'tasks', views.TaskViewSet)
+    router.register(r'jobs', views.JobViewSet)
 
 urlpatterns = router.urls
