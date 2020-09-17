@@ -75,3 +75,5 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
 "/project/static",
 ]
+
+CELERY_RESULT_BACKEND = 'django-db'

@@ -295,5 +295,23 @@
             "traceback": null,
             "meta": "{\"children\": []}"
         }
+    },
+    {
+        "model": "geospaas_rest_api.job",
+        "pk": 1,
+        "fields": {
+            "id": 1,
+            "task_id": "df2bfb58-7d2e-4f83-9dc2-bac95a421c72",
+            "date_created": "2020-07-16T13:53:30.000Z"
+        }
+    },
+    {
+        "model": "geospaas_rest_api.job",
+        "pk": 2,
+        "fields": {
+            "id": 2,
+            "task_id": "733d3a63-7a5a-4a1e-8cf0-750ae393dd99",
+            "date_created": "2020-07-16T13:58:01.918Z"
+        }
     }
 ]
