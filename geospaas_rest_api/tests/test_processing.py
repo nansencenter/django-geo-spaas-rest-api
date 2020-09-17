@@ -154,57 +154,6 @@ class JobModelTests(django.test.TestCase):
             (expected_result, True)
         )
 
-    def test_validate_error_on_wrong_parameter_key(self):
-        """Validation must fail if wrong parameter keys are provided to an action"""
-        parameters = {'wrong_key': 1}
-        valid_parameters = serializers.JobSerializer.jobs['download']['valid_parameters']
-        with self.assertRaises(ValidationError) as assert_raises:
-            self.assertFalse(models.Job.validate_parameters(valid_parameters, parameters))
-        self.assertListEqual(
-            assert_raises.exception.detail,
-            [ErrorDetail(string="Invalid parameter 'wrong_key'", code='invalid')]
-        )
-
-    def test_validate_error_on_wrong_parameter_value_type(self):
-        """Validation must fail if the wrong type of parameter value is provided to an action"""
-        parameters = {'dataset_id': 'wrong_value_type'}
-        valid_parameters = serializers.JobSerializer.jobs['download']['valid_parameters']
-        with self.assertRaises(ValidationError) as assert_raises:
-            self.assertFalse(models.Job.validate_parameters(valid_parameters, parameters))
-        self.assertListEqual(
-            assert_raises.exception.detail,
-            [ErrorDetail(string="Invalid value for 'dataset_id'", code='invalid')]
-        )
-
-    def test_validate_error_on_wrong_parameter_value(self):
-        """
-        Validation must fail if a parameter value that is not in the valid choices
-        is provided to an action
-        """
-        parameters = {'dataset_id': 1, 'format': 'wrong_value'}
-        valid_parameters = serializers.JobSerializer.jobs['convert']['valid_parameters']
-        with self.assertRaises(ValidationError) as assert_raises:
-            self.assertFalse(models.Job.validate_parameters(valid_parameters, parameters))
-        self.assertListEqual(
-            assert_raises.exception.detail,
-            [ErrorDetail(string="Invalid value for 'format'", code='invalid')]
-        )
-
-    def test_validate_error_on_wrong_number_of_parameters(self):
-        """
-        A ValidationError must be raised if the wrong number of parameters is provided to an action
-        """
-        parameters = {'dataset_id': 1}
-        valid_parameters = serializers.JobSerializer.jobs['convert']['valid_parameters']
-        with self.assertRaises(ValidationError) as assert_raises:
-            self.assertFalse(models.Job.validate_parameters(valid_parameters, parameters))
-        self.assertListEqual(
-            assert_raises.exception.detail,
-            [ErrorDetail(
-                string="All the following parameters are required: ['dataset_id', 'format']",
-                code='invalid')]
-        )
-
 
 class JobViewSetTests(django.test.TestCase):
     """Test jobs/ endpoints"""
@@ -370,6 +319,73 @@ class JobSerializerTests(django.test.TestCase):
                 'action': [
                     ErrorDetail(string='"wrong_value" is not a valid choice.',
                                 code='invalid_choice')
+                ]
+            }
+        )
+
+    def test_validate_error_on_wrong_parameter_key(self):
+        """Validation must fail if wrong parameter keys are provided to an action"""
+        serializer = serializers.JobSerializer(data={
+            'action': 'download', 'parameters': {'wrong_key': 1}
+        })
+        with self.assertRaises(ValidationError) as assert_raises:
+            self.assertFalse(serializer.is_valid(raise_exception=True))
+        self.assertDictEqual(
+            assert_raises.exception.detail,
+            {
+                'non_field_errors': [
+                    ErrorDetail(string="Invalid parameter 'wrong_key'", code='invalid')
+                ]
+            }
+        )
+
+    def test_validate_error_on_wrong_parameter_value_type(self):
+        """Validation must fail if the wrong type of parameter value is provided to an action"""
+        serializer = serializers.JobSerializer(data={
+            'action': 'download', 'parameters': {'dataset_id': 'wrong_value_type'}
+        })
+        with self.assertRaises(ValidationError) as assert_raises:
+            self.assertFalse(serializer.is_valid(raise_exception=True))
+        self.assertDictEqual(
+            assert_raises.exception.detail,
+            {
+                'non_field_errors': [
+                    ErrorDetail(string="Invalid value for 'dataset_id'", code='invalid')
+                ]
+            }
+        )
+
+    def test_validate_error_on_wrong_parameter_value(self):
+        """
+        Validation must fail if a parameter value that is not in the valid choices
+        is provided to an action
+        """
+        serializer = serializers.JobSerializer(data={
+            'action': 'convert', 'parameters': {'dataset_id': 1, 'format': 'wrong_value'}
+        })
+        with self.assertRaises(ValidationError) as assert_raises:
+            self.assertFalse(serializer.is_valid(raise_exception=True))
+        self.assertDictEqual(
+            assert_raises.exception.detail,
+            {'non_field_errors': [ErrorDetail(string="Invalid value for 'format'", code='invalid')]}
+        )
+
+    def test_validate_error_on_wrong_number_of_parameters(self):
+        """
+        A ValidationError must be raised if the wrong number of parameters is provided to an action
+        """
+        serializer = serializers.JobSerializer(data={
+            'action': 'convert', 'parameters': {'dataset_id': 1}
+        })
+        with self.assertRaises(ValidationError) as assert_raises:
+            self.assertFalse(serializer.is_valid(raise_exception=True))
+        self.assertDictEqual(
+            assert_raises.exception.detail,
+            {
+                'non_field_errors': [
+                    ErrorDetail(string=("All the following parameters are required: "
+                                        "['dataset_id', 'format']"),
+                                code='invalid')
                 ]
             }
         )

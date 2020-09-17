@@ -1,7 +1,6 @@
 """Models for the GeoSPaaS REST API"""
 from django.db import models
 from celery.result import AsyncResult
-from rest_framework.exceptions import ValidationError
 
 
 class Job(models.Model):
@@ -39,24 +38,3 @@ class Job(models.Model):
                 finished = True
                 break
         return current_result, finished
-
-    @staticmethod
-    def validate_parameters(valid_parameters, parameters):
-        """Validates the parameters of a request based on the valid_parameters dictionary."""
-        # check that all parameter names from the request are valid
-        for parameter, value in parameters.items():
-            if parameter not in valid_parameters.keys():  # pylint: disable=no-member
-                raise ValidationError(f"Invalid parameter '{parameter}'")
-            # check that the parameter values are valid
-            if 'type' in valid_parameters[parameter]:
-                if not isinstance(value, valid_parameters[parameter]['type']):
-                    raise ValidationError(f"Invalid value for '{parameter}'")
-            elif 'values' in valid_parameters[parameter]:
-                if not value in valid_parameters[parameter]['values']:
-                    raise ValidationError(f"Invalid value for '{parameter}'")
-        # check that all parameters are there
-        if len(valid_parameters) != len(parameters):
-            raise ValidationError(
-                "All the following parameters are required: {}".format(
-                    list(valid_parameters.keys())))  # pylint: disable=no-member
-        return parameters

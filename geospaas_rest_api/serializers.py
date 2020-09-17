@@ -5,6 +5,7 @@ import django_celery_results.models
 import geospaas.catalog.models
 import geospaas.vocabularies.models
 import rest_framework.serializers
+from rest_framework.exceptions import ValidationError
 
 try:
     import geospaas_processing.tasks as tasks
@@ -91,14 +92,35 @@ class JobSerializer(rest_framework.serializers.Serializer):
         return job
 
     def validate(self, attrs):
-        """Validates the parameters using the `validate_parameters()` method of the Job instance."""
+        """Validates the request data"""
         # No need to check for the presence of 'action' and 'parameters',
         # because fields are checked before this method comes into play
-        attrs['parameters'] = models.Job.validate_parameters(
+        attrs['parameters'] = self.check_parameters(
             self.jobs[attrs['action']]['valid_parameters'],
             attrs['parameters']
         )
         return attrs
+
+    @staticmethod
+    def check_parameters(valid_parameters, parameters):
+        """Validates the parameters of a request based on the valid_parameters dictionary."""
+        # check that all parameter names from the request are valid
+        for parameter, value in parameters.items():
+            if parameter not in valid_parameters.keys():  # pylint: disable=no-member
+                raise ValidationError(f"Invalid parameter '{parameter}'")
+            # check that the parameter values are valid
+            if 'type' in valid_parameters[parameter]:
+                if not isinstance(value, valid_parameters[parameter]['type']):
+                    raise ValidationError(f"Invalid value for '{parameter}'")
+            elif 'values' in valid_parameters[parameter]:
+                if not value in valid_parameters[parameter]['values']:
+                    raise ValidationError(f"Invalid value for '{parameter}'")
+        # check that all parameters are there
+        if len(valid_parameters) != len(parameters):
+            raise ValidationError(
+                "All the following parameters are required: {}".format(
+                    list(valid_parameters.keys())))  # pylint: disable=no-member
+        return parameters
 
 
 class TaskResultSerializer(rest_framework.serializers.ModelSerializer):
