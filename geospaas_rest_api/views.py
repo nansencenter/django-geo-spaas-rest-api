@@ -26,7 +26,7 @@ class JobViewSet(rest_framework.mixins.CreateModelMixin,
         Return a 404 error to the client if it is not. This basically disables the tasks endpoint if
         geospaas_processing is not installed.
         """
-        if not serializers.tasks:
+        if not models.tasks:
             raise django.http.Http404()
         super().__init__(**kwargs)
 

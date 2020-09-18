@@ -1,5 +1,6 @@
 """Tests for the long-running tasks endpoint of the GeoSPaaS REST API"""
 import os
+import unittest
 import unittest.mock as mock
 
 import celery
@@ -116,19 +117,34 @@ class JobModelTests(django.test.TestCase):
     def setUp(self):
         # This mock is necessary to avoid disabling the TaskViewSet when tests are run in an
         # environment where geospaas_processing is not installed.
-        mock.patch('geospaas_rest_api.serializers.tasks').start()
+        mock.patch('geospaas_rest_api.models.tasks').start()
         self.addCleanup(mock.patch.stopall)
+
+    def test_error_on_check_parameters_execution(self):
+        """
+        Any attempt to access the signature attribute on the
+        `Job` class should raise a NotImplementedError
+        """
+        with self.assertRaises(NotImplementedError):
+            models.Job.check_parameters(None)
 
     def test_run_job(self):
         """
         `Job.run()` must launch the celery tasks and
         return a job instance pointing to the first task
         """
-        mock_signature = mock.Mock()
-        mock_signature.delay.return_value.task_id = 1
-        job = models.Job.run(mock_signature, 'foo')
+        with mock.patch.object(models.Job, 'signature') as mock_signature:
+            mock_signature.delay.return_value.task_id = 1
+            job = models.Job.run('foo')
         mock_signature.delay.assert_called_with('foo')
         self.assertIsInstance(job, models.Job)
+
+    def test_run_job_error_if_tasks_not_importable(self):
+        """`Job.run()` must raise an exception if `geospaas_processing.tasks` is not importable"""
+        with mock.patch('geospaas_rest_api.models.tasks', None):
+            with mock.patch.object(models.Job, 'signature'):
+                with self.assertRaises(ImportError):
+                    models.Job.run()
 
     def test_get_current_task_result(self):
         """
@@ -155,6 +171,109 @@ class JobModelTests(django.test.TestCase):
         )
 
 
+class DownloadJobTests(unittest.TestCase):
+    """Tests for the DownloadJob class"""
+
+    def test_check_parameters_ok(self):
+        """Test the checking of correct parameters"""
+        parameters = {'dataset_id': 1}
+        self.assertEqual(models.DownloadJob.check_parameters(parameters), parameters)
+
+    def test_check_parameters_wrong_key(self):
+        """`check_parameters()` must raise an exception if there is a wrong key in the parameters"""
+        parameters = {'wrong_key': 1}
+        with self.assertRaises(ValidationError) as raised:
+            models.DownloadJob.check_parameters(parameters)
+        self.assertListEqual(
+            raised.exception.detail,
+            [ErrorDetail(string="The download action accepts only one parameter: 'dataset_id'",
+                         code='invalid')]
+        )
+
+    def test_check_parameters_extra_param(self):
+        """`check_parameters()` must raise an exception if an extra parameter is given"""
+        parameters = {'dataset_id': 1, 'extra_param': 'foo'}
+        with self.assertRaises(ValidationError) as raised:
+            models.DownloadJob.check_parameters(parameters)
+        self.assertListEqual(
+            raised.exception.detail,
+            [ErrorDetail(string="The download action accepts only one parameter: 'dataset_id'",
+                         code='invalid')]
+        )
+
+    def test_check_parameters_wrong_type(self):
+        """
+        `check_parameters()` must raise an exception if
+        the 'dataset_id' value is of the wrong type
+        """
+        parameters = {'dataset_id': '1'}
+        with self.assertRaises(ValidationError) as raised:
+            models.DownloadJob.check_parameters(parameters)
+        self.assertListEqual(
+            raised.exception.detail,
+            [ErrorDetail(string="'dataset_id' must be an integer", code='invalid')]
+        )
+
+
+class ConvertJob(unittest.TestCase):
+    """Tests for the ConvertJob class"""
+
+    def test_check_parameters_ok(self):
+        """Test the checking of correct parameters"""
+        parameters = {'dataset_id': 1, 'format': 'idf'}
+        self.assertEqual(models.ConvertJob.check_parameters(parameters), parameters)
+
+    def test_check_parameters_wrong_key(self):
+        """`check_parameters()` must raise an exception if there is a wrong key in the parameters"""
+        parameters = {'wrong_key': 1, 'format': 'idf'}
+        with self.assertRaises(ValidationError) as raised:
+            models.ConvertJob.check_parameters(parameters)
+        self.assertListEqual(
+            raised.exception.detail,
+            [ErrorDetail(
+                string="The download action accepts only these parameter: dataset_id, format",
+                code='invalid')]
+        )
+
+    def test_check_parameters_extra_param(self):
+        """`check_parameters()` must raise an exception if an extra parameter is given"""
+        parameters = {'dataset_id': 1, 'format': 'idf', 'extra_param': 'foo'}
+        with self.assertRaises(ValidationError) as raised:
+            models.ConvertJob.check_parameters(parameters)
+        self.assertListEqual(
+            raised.exception.detail,
+            [ErrorDetail(
+                string="The download action accepts only these parameter: dataset_id, format",
+                code='invalid')]
+        )
+
+    def test_check_parameters_wrong_type_for_dataset_id(self):
+        """
+        `check_parameters()` must raise an exception if
+        the 'dataset_id' value is of the wrong type
+        """
+        parameters = {'dataset_id': '1', 'format': 'idf'}
+        with self.assertRaises(ValidationError) as raised:
+            models.ConvertJob.check_parameters(parameters)
+        self.assertListEqual(
+            raised.exception.detail,
+            [ErrorDetail(string="'dataset_id' must be an integer", code='invalid')]
+        )
+
+    def test_check_parameters_wrong_value_for_format(self):
+        """
+        `check_parameters()` must raise an exception if
+        the 'dataset_id' value is of the wrong type
+        """
+        parameters = {'dataset_id': 1, 'format': 'nc'}
+        with self.assertRaises(ValidationError) as raised:
+            models.ConvertJob.check_parameters(parameters)
+        self.assertListEqual(
+            raised.exception.detail,
+            [ErrorDetail(string="'format' only accepts the following values: idf", code='invalid')]
+        )
+
+
 class JobViewSetTests(django.test.TestCase):
     """Test jobs/ endpoints"""
 
@@ -163,14 +282,14 @@ class JobViewSetTests(django.test.TestCase):
     def setUp(self):
         # This mock is necessary to avoid disabling the TaskViewSet when tests are run in an
         # environment where geospaas_processing is not installed.
-        mock.patch('geospaas_rest_api.serializers.tasks').start()
+        mock.patch('geospaas_rest_api.models.tasks').start()
         self.addCleanup(mock.patch.stopall)
 
     def test_jobs_inaccessible_if_geospaas_processing_not_importable(self):
         """
         If geospaas_processing is not importable, the 'jobs/' endpoint should not be accessible
         """
-        with mock.patch('geospaas_rest_api.serializers.tasks', None):
+        with mock.patch('geospaas_rest_api.models.tasks', None):
             self.assertEqual(self.client.get('/api/jobs/').status_code, 404)
             self.assertEqual(self.client.post('/api/jobs/', {}).status_code, 404)
             self.assertEqual(self.client.get('/api/jobs/1234').status_code, 404)
@@ -239,18 +358,9 @@ class JobSerializerTests(django.test.TestCase):
     fixtures = ['processing_tests_data']
 
     def setUp(self):
-        tasks_patcher = mock.patch.object(serializers, 'tasks')
+        tasks_patcher = mock.patch('geospaas_rest_api.models.tasks')
         self.tasks_mock = tasks_patcher.start()
         self.addCleanup(mock.patch.stopall)
-
-    def test_error_if_geospaas_processing_not_importable(self):
-        """
-        It should not be possible to instantiate a JobSerializer
-        if geospaas_processing.tasks is not importable
-        """
-        with mock.patch('geospaas_rest_api.serializers.tasks', None):
-            with self.assertRaises(ImportError):
-                serializers.JobSerializer()
 
     def test_validation_return_value(self):
         """Test tha the validate() method returns the validated data"""
@@ -306,100 +416,14 @@ class JobSerializerTests(django.test.TestCase):
             }
         )
 
-    def test_validate_error_on_wrong_action(self):
-        """Validation must fail if an invalid action is requested"""
-        serializer = serializers.JobSerializer(data={
-            'action': 'wrong_value', 'parameters': {}
-        })
-        with self.assertRaises(ValidationError) as assert_raises:
-            self.assertFalse(serializer.is_valid(raise_exception=True))
-        self.assertDictEqual(
-            assert_raises.exception.detail,
-            {
-                'action': [
-                    ErrorDetail(string='"wrong_value" is not a valid choice.',
-                                code='invalid_choice')
-                ]
-            }
-        )
-
-    def test_validate_error_on_wrong_parameter_key(self):
-        """Validation must fail if wrong parameter keys are provided to an action"""
-        serializer = serializers.JobSerializer(data={
-            'action': 'download', 'parameters': {'wrong_key': 1}
-        })
-        with self.assertRaises(ValidationError) as assert_raises:
-            self.assertFalse(serializer.is_valid(raise_exception=True))
-        self.assertDictEqual(
-            assert_raises.exception.detail,
-            {
-                'non_field_errors': [
-                    ErrorDetail(string="Invalid parameter 'wrong_key'", code='invalid')
-                ]
-            }
-        )
-
-    def test_validate_error_on_wrong_parameter_value_type(self):
-        """Validation must fail if the wrong type of parameter value is provided to an action"""
-        serializer = serializers.JobSerializer(data={
-            'action': 'download', 'parameters': {'dataset_id': 'wrong_value_type'}
-        })
-        with self.assertRaises(ValidationError) as assert_raises:
-            self.assertFalse(serializer.is_valid(raise_exception=True))
-        self.assertDictEqual(
-            assert_raises.exception.detail,
-            {
-                'non_field_errors': [
-                    ErrorDetail(string="Invalid value for 'dataset_id'", code='invalid')
-                ]
-            }
-        )
-
-    def test_validate_error_on_wrong_parameter_value(self):
-        """
-        Validation must fail if a parameter value that is not in the valid choices
-        is provided to an action
-        """
-        serializer = serializers.JobSerializer(data={
-            'action': 'convert', 'parameters': {'dataset_id': 1, 'format': 'wrong_value'}
-        })
-        with self.assertRaises(ValidationError) as assert_raises:
-            self.assertFalse(serializer.is_valid(raise_exception=True))
-        self.assertDictEqual(
-            assert_raises.exception.detail,
-            {'non_field_errors': [ErrorDetail(string="Invalid value for 'format'", code='invalid')]}
-        )
-
-    def test_validate_error_on_wrong_number_of_parameters(self):
-        """
-        A ValidationError must be raised if the wrong number of parameters is provided to an action
-        """
-        serializer = serializers.JobSerializer(data={
-            'action': 'convert', 'parameters': {'dataset_id': 1}
-        })
-        with self.assertRaises(ValidationError) as assert_raises:
-            self.assertFalse(serializer.is_valid(raise_exception=True))
-        self.assertDictEqual(
-            assert_raises.exception.detail,
-            {
-                'non_field_errors': [
-                    ErrorDetail(string=("All the following parameters are required: "
-                                        "['dataset_id', 'format']"),
-                                code='invalid')
-                ]
-            }
-        )
-
     def test_launch_download(self):
         """The download task must be called with the right parameters"""
         validated_data = {
             'action': 'download', 'parameters': {'dataset_id': 1}
         }
         serializer = serializers.JobSerializer()
-        mock_signature = mock.Mock()
-        mock_jobs = {'download': {'signature': mock_signature}}
-        mock_signature.delay.return_value.task_id = 1
-        with mock.patch.object(serializers.JobSerializer, 'jobs', mock_jobs):
+        with mock.patch.object(models.DownloadJob, 'signature') as mock_signature:
+            mock_signature.delay.return_value.task_id = 1
             serializer.create(validated_data)
             mock_signature.delay.assert_called_with(
                 (validated_data['parameters']['dataset_id'],)
@@ -411,10 +435,8 @@ class JobSerializerTests(django.test.TestCase):
             'action': 'convert', 'parameters': {'dataset_id': 1, 'format': 'idf'}
         }
         serializer = serializers.JobSerializer()
-        mock_signature = mock.Mock()
-        mock_jobs = {'convert': {'signature': mock_signature}}
-        mock_signature.delay.return_value.task_id = 1
-        with mock.patch.object(serializers.JobSerializer, 'jobs', mock_jobs):
+        with mock.patch.object(models.ConvertJob, 'signature') as mock_signature:
+            mock_signature.delay.return_value.task_id = 1
             serializer.create(validated_data)
             mock_signature.delay.assert_called_with((validated_data['parameters']['dataset_id'],))
 
