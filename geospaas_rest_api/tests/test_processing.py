@@ -463,17 +463,24 @@ class JobSerializerTests(django.test.TestCase):
                 }
             )
 
-    def test_finished_job_representation(self):
+    def test_finished_job_representation_no_success(self):
         """
-        The representation of a job which has not finished executing
+        The representation of a job which has finished executing
         should have the following fields:
           - id
           - task_id
           - status
           - date_created
           - date_done
-          - result
+          - result if the status is success
         """
+        expected_base_dict = {
+            "id": 1,
+            "task_id": "df2bfb58-7d2e-4f83-9dc2-bac95a421c72",
+            "status": 'PLACEHOLDER',
+            "date_created": '2020-07-16T13:53:30Z',
+            "date_done": 'PLACEHOLDER'
+        }
         with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
             mock_result = mock.Mock()
             mock_result.state = 'PLACEHOLDER'
@@ -482,12 +489,12 @@ class JobSerializerTests(django.test.TestCase):
             mock_get_result.return_value = (mock_result, True)
             self.assertDictEqual(
                 serializers.JobSerializer().to_representation(models.Job.objects.get(id=1)),
-                {
-                    "id": 1,
-                    "task_id": "df2bfb58-7d2e-4f83-9dc2-bac95a421c72",
-                    "status": 'PLACEHOLDER',
-                    "date_created": '2020-07-16T13:53:30Z',
-                    "date_done": 'PLACEHOLDER',
-                    "result": 'PLACEHOLDER'
-                }
+                expected_base_dict
+            )
+
+            mock_result.state = 'SUCCESS'
+            expected_base_dict['status'] = 'SUCCESS'
+            self.assertDictEqual(
+                serializers.JobSerializer().to_representation(models.Job.objects.get(id=1)),
+                {**expected_base_dict, 'result': 'PLACEHOLDER'}
             )
