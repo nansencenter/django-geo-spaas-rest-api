@@ -224,10 +224,10 @@ The status of the job (and each of its tasks) can be:
   - `FAILED`: the job failed
 
 Further information about a job can be accessed by sending a GET request to:
-`https://<api_root_url>/jobs/<job_id>`.
+`https://<api_root_url>/jobs/<job_id>/`.
 This link can be polled as needed to get updates on the status of the job.
 
-Continuing the previous example, a request to `https://<api_root_url>/jobs/4` would yield
+Continuing the previous example, a request to `https://<api_root_url>/jobs/4/` would yield
 the following data:
 
 ```json
