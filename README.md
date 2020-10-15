@@ -18,7 +18,7 @@ It provides endpoints to list the following objects stored in a GeoSPaaS databas
   - people
   - roles
   - datasets
-  - dataset_parameters
+  - parameters
   - dataset_uris
   - dataset_relationships
   - datacenters
