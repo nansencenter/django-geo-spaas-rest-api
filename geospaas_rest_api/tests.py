@@ -89,7 +89,7 @@ class BasicAPITests(TestCase):
 
     def test_dataset_parameters_call(self):
         """shall return status code 200 for dataset_parameters"""
-        response9 = self.c.get('/api/dataset_parameters/')
+        response9 = self.c.get('/api/parameters/')
         self.assertEqual(response9.status_code, 200)
 
     def test_dataset_uris_call(self):

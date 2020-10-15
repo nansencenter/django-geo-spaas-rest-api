@@ -5,12 +5,12 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from geospaas_rest_api.filters import DatasetFilter, DatasetURIFilter
 from geospaas_rest_api.serializers import (GeographicLocationSerializer, SourceSerializer,
                                            PersonnelSerializer, RoleSerializer, DatasetSerializer,
-                                           DatasetParameterSerializer, DatasetURISerializer,
+                                           ParameterSerializer, DatasetURISerializer,
                                            DatasetRelationshipSerializer, InstrumentSerializer,
                                            PlatformSerializer, DataCenterSerializer)
 from geospaas.catalog.models import (GeographicLocation, Source, Personnel, Role, Dataset,
-                                     DatasetParameter, DatasetURI, DatasetRelationship)
-from geospaas.vocabularies.models import DataCenter, Instrument, Platform
+                                     DatasetURI, DatasetRelationship)
+from geospaas.vocabularies.models import DataCenter, Instrument, Parameter, Platform
 
 
 class GeographicLocationViewSet(ReadOnlyModelViewSet):
@@ -70,12 +70,12 @@ class DatasetViewSet(ReadOnlyModelViewSet):
     filter_backends = [DatasetFilter]
 
 
-class DatasetParameterViewSet(ReadOnlyModelViewSet):
+class ParameterViewSet(ReadOnlyModelViewSet):
     """
-    API endpoint to view DatasetParameters
+    API endpoint to view Parameters
     """
-    queryset = DatasetParameter.objects.all()
-    serializer_class = DatasetParameterSerializer
+    queryset = Parameter.objects.all()
+    serializer_class = ParameterSerializer
 
 
 class DatasetURIViewSet(ReadOnlyModelViewSet):

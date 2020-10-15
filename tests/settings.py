@@ -18,7 +18,7 @@ SECRET_KEY = 'chu2p96if%&^09w6okqjwc-%+hmpc1t3@b&i8*+3nvdk!xpdb0'
 INSTALLED_APPS = [
     'leaflet',
     'django_forms_bootstrap',
-    'geospaas.viewer',
+    'geospaas.base_viewer',
     'geospaas.catalog',
     'geospaas.vocabularies',
     'django.contrib.sessions',

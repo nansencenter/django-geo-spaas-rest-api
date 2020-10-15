@@ -1,10 +1,10 @@
 """
 Serializers for the GeoSPaaS REST API
 """
+from geospaas.catalog.models import (Dataset, DatasetRelationship, DatasetURI,
+                                     GeographicLocation, Personnel, Role, Source)
+from geospaas.vocabularies.models import DataCenter, Instrument, Parameter, Platform
 from rest_framework import serializers
-from geospaas.catalog.models import (GeographicLocation, Source, Personnel, Role, Dataset,
-                                     DatasetParameter, DatasetURI, DatasetRelationship)
-from geospaas.vocabularies.models import DataCenter, Instrument, Platform
 
 
 class GeographicLocationSerializer(serializers.ModelSerializer):
@@ -70,12 +70,12 @@ class DatasetSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class DatasetParameterSerializer(serializers.ModelSerializer):
+class ParameterSerializer(serializers.ModelSerializer):
     """
-    Serializer for DatasetParameter objects
+    Serializer for Parameter objects
     """
     class Meta:
-        model = DatasetParameter
+        model = Parameter
         fields = '__all__'
 
 
