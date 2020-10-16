@@ -245,10 +245,15 @@ Where `<task_result>` is the result of the last task in the job.
 
 The `/tasks/` endpoint gives read-only access to the individual tasks for diagnostics purposes.
 
-#### Downloading datasets
+#### Available actions
 
-A download job is launched by sending a POST request to the `/jobs/` endpoint with the
-following payload:
+The following actions are available on the `/jobs/` endpoint.
+
+##### `download`
+
+Downloads a dataset to the API server.
+
+Payload:
 
 ```json
 {
@@ -257,10 +262,38 @@ following payload:
 }
 ```
 
-Where `<dataset_id>` is the ID of the dataset to download (it is an integer).
+Where `<dataset_id>` (integer) is the ID of the dataset to download.
 It can be obtained using the search capabilities of the `/datasets/` endpoint.
 
 Once the job is over, its **"result"** is set with a two-elements list.
   - the first element is the ID of the dataset that was downloaded
     (this enables to easily chain tasks together)
   - the second element is the link where the dataset can be retrieved.
+
+##### `convert`
+
+Converts a dataset file to a given format.
+
+Payload:
+
+```json
+{
+    "action": "convert",
+    "parameters": {
+      "format": "<format>",
+      "dataset_id": <dataset_id>,
+    }
+}
+```
+
+Where:
+  - `<format>` (string) is the target format.
+  - `<dataset_id>` (integer) is the ID of the dataset to download.
+
+Available formats:
+  - "idf"
+
+Once the job is over, its **"result"** is set with a two-elements list.
+  - the first element is the ID of the dataset that was converted
+    (this enables to easily chain tasks together)
+  - the second element is the link where the converted file can be retrieved.
