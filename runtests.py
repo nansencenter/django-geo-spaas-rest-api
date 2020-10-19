@@ -7,7 +7,7 @@ from django.conf import settings
 from django.test.utils import get_runner
 
 if __name__ == "__main__":
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.settings'
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'geospaas_rest_api.tests.settings'
     django.setup()
     test_case = f".{sys.argv[1]}" if len(sys.argv) >= 2 else ''
     TestRunner = get_runner(settings)

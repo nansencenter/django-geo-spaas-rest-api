@@ -1,106 +1,149 @@
 """
 Serializers for the GeoSPaaS REST API
 """
-from geospaas.catalog.models import (Dataset, DatasetRelationship, DatasetURI,
-                                     GeographicLocation, Personnel, Role, Source)
-from geospaas.vocabularies.models import DataCenter, Instrument, Parameter, Platform
-from rest_framework import serializers
+import django_celery_results.models
+import geospaas.catalog.models
+import geospaas.vocabularies.models
+import rest_framework.serializers
+
+import geospaas_rest_api.models as models
 
 
-class GeographicLocationSerializer(serializers.ModelSerializer):
-    """
-    Serializer for GeographicLocation objects
-    """
+class JobSerializer(rest_framework.serializers.Serializer):
+    """Serializer for Job objects"""
+
+    jobs = {
+        'download': models.DownloadJob,
+        'convert': models.ConvertJob
+    }
+
+    # Actual Job fields
+    id = rest_framework.serializers.IntegerField(read_only=True)
+    task_id = rest_framework.serializers.CharField(read_only=True)
+    date_created = rest_framework.serializers.DateTimeField(read_only=True)
+
+    # Fields used to launch jobs
+    action = rest_framework.serializers.ChoiceField(choices=list(jobs.keys()),
+                                                    required=True, write_only=True,
+                                                    help_text="Action to perform")
+    parameters = rest_framework.serializers.DictField(write_only=True,
+                                                      help_text="Parameters for the action")
+
+    def to_representation(self, instance):
+        """Generate a representation of the job"""
+        representation = super().to_representation(instance)
+
+        current_result, finished = instance.get_current_task_result()
+        representation['status'] = current_result.state
+
+        if finished:
+            representation['date_done'] = current_result.date_done
+            if current_result.state == 'SUCCESS':
+                representation['result'] = str(current_result.result)
+
+        return representation
+
+    def update(self, instance, validated_data):
+        """Does nothing. Update of already created tasks is only done by the Celery worker"""
+
+    def create(self, validated_data):
+        """Launches a long-running task, and returns the corresponding AsyncResult"""
+        # This might need to be modified if the first task of a Job requires more arguments
+        job = self.jobs[validated_data['action']].run((validated_data['parameters']['dataset_id'],))
+        job.save()
+        return job
+
+    def validate(self, attrs):
+        """Validates the request data"""
+        # No need to check for the presence of 'action' and 'parameters',
+        # because fields are checked before this method comes into play
+        attrs['parameters'] = self.jobs[attrs['action']].check_parameters(
+            attrs['parameters']
+        )
+        return attrs
+
+
+class TaskResultSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for TaskResult objects"""
     class Meta:
-        model = GeographicLocation
+        model = django_celery_results.models.TaskResult
         fields = '__all__'
 
 
-class SourceSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Source objects
-    """
+class GeographicLocationSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for GeographicLocation objects"""
     class Meta:
-        model = Source
+        model = geospaas.catalog.models.GeographicLocation
         fields = '__all__'
 
 
-class InstrumentSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Instrument objects
-    """
+class SourceSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for Source objects"""
     class Meta:
-        model = Instrument
+        model = geospaas.catalog.models.Source
         fields = '__all__'
 
 
-class PlatformSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Source objects
-    """
+class InstrumentSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for Instrument objects"""
     class Meta:
-        model = Platform
+        model = geospaas.vocabularies.models.Instrument
         fields = '__all__'
 
 
-class PersonnelSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Personnel objects
-    """
+class PlatformSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for Source objects"""
     class Meta:
-        model = Personnel
+        model = geospaas.vocabularies.models.Platform
         fields = '__all__'
 
 
-class RoleSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Role objects
-    """
+class PersonnelSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for Personnel objects"""
     class Meta:
-        model = Role
+        model = geospaas.catalog.models.Personnel
         fields = '__all__'
 
 
-class DatasetSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Dataset objects
-    """
+class RoleSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for Role objects"""
     class Meta:
-        model = Dataset
+        model = geospaas.catalog.models.Role
         fields = '__all__'
 
 
-class ParameterSerializer(serializers.ModelSerializer):
+class DatasetSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for Dataset objects"""
+    class Meta:
+        model = geospaas.catalog.models.Dataset
+        fields = '__all__'
+
+
+class ParameterSerializer(rest_framework.serializers.ModelSerializer):
     """
     Serializer for Parameter objects
     """
     class Meta:
-        model = Parameter
+        model = geospaas.vocabularies.models.Parameter
         fields = '__all__'
 
 
-class DatasetURISerializer(serializers.ModelSerializer):
-    """
-    Serializer for DatasetURI objects
-    """
+class DatasetURISerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for DatasetURI objects"""
     class Meta:
-        model = DatasetURI
+        model = geospaas.catalog.models.DatasetURI
         fields = '__all__'
 
 
-class DatasetRelationshipSerializer(serializers.ModelSerializer):
-    """
-    Serializer for DatasetRelationship objects
-    """
+class DatasetRelationshipSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for DatasetRelationship objects"""
     class Meta:
-        model = DatasetRelationship
+        model = geospaas.catalog.models.DatasetRelationship
         fields = '__all__'
 
 
-class DataCenterSerializer(serializers.ModelSerializer):
-    """
-    Serializer for DataCenter objects
-    """
+class DataCenterSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for DataCenter objects"""
     class Meta:
-        model = DataCenter
+        model = geospaas.vocabularies.models.DataCenter
         fields = '__all__'

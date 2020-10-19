@@ -1,0 +1,249 @@
+[{
+    "pk": 1,
+    "model": "catalog.source",
+    "fields": {
+        "platform": 1,
+        "instrument": 2,
+        "specs": "Nothing special"
+    }
+},{
+    "pk": 2,
+    "model": "catalog.source",
+    "fields": {
+        "platform": 2,
+        "instrument": 2,
+        "specs": "Nothing special"
+    }
+},{
+    "pk": 1,
+    "model": "catalog.geographiclocation",
+    "fields": {
+        "geometry": "SRID=4326;POLYGON ((0.0000000000000000 0.0000000000000000, 0.0000000000000000 10.0000000000000000, 10.0000000000000000 10.0000000000000000, 10.0000000000000000 0.0000000000000000, 0.0000000000000000 0.0000000000000000))"
+    }
+},{
+    "pk": 2,
+    "model": "catalog.geographiclocation",
+    "fields": {
+        "geometry": "SRID=4326;POLYGON ((20.0000000000000000 20.0000000000000000, 20.0000000000000000 30.0000000000000000, 30.0000000000000000 30.0000000000000000, 30.0000000000000000 20.0000000000000000, 20.0000000000000000 20.0000000000000000))"
+    }
+},{
+    "pk": 1,
+    "model": "catalog.dataset",
+    "fields": {
+        "entry_id": "NERSC_test_dataset_titusen",
+        "entry_title": "Test dataset",
+        "time_coverage_end": "2010-01-02T00:00:00Z",
+        "time_coverage_start": "2010-01-01T00:00:00Z",
+        "summary": "This is a quite short summary about the test dataset.",
+        "source": 1,
+        "geographic_location": 1,
+        "data_center": 1,
+        "gcmd_location": 1,
+        "ISO_topic_category": 1,
+        "access_constraints": null
+    }
+},{
+    "pk": 2,
+    "model": "catalog.dataset",
+    "fields": {
+        "entry_id": "NERSC_test_dataset_tjuetusen",
+        "entry_title": "Test child dataset",
+        "time_coverage_end": "2010-01-03T00:00:00Z",
+        "time_coverage_start": "2010-01-02T00:00:00Z",
+        "summary": "This is a quite short summary about the test dataset.",
+        "source": 2,
+        "geographic_location": 2,
+        "data_center": 2,
+        "gcmd_location": 1,
+        "ISO_topic_category": 1,
+        "access_constraints": null
+    }
+},{
+    "model": "catalog.dataseturi",
+    "pk": 1,
+    "fields": {
+        "uri": "file://localhost/some/test/file1.ext",
+        "dataset": 1
+    }
+},{
+    "model": "catalog.dataseturi",
+    "pk": 2,
+    "fields": {
+        "uri": "file://localhost/some/test/file2.ext",
+        "dataset": 2
+    }
+},{
+    "fields": {
+        "category": "Earth Remote Sensing Instruments",
+        "short_name": "",
+        "long_name": "",
+        "subtype": "",
+        "type": "",
+        "instrument_class": ""
+    },
+    "model": "vocabularies.instrument",
+    "pk": 1
+},{
+    "fields": {
+        "category": "Solar/Space Observing Instruments",
+        "short_name": "HXT",
+        "long_name": "Hard X-ray Telescope",
+        "subtype": "dummy_included_in_test_mode",
+        "type": "dummy_included_in_test_mode",
+        "instrument_class": "X-Ray/Gamma Ray Detectors"
+    },
+    "model": "vocabularies.instrument",
+    "pk": 2
+},{
+    "fields": {
+        "category": "Aircraft",
+        "long_name": "",
+        "series_entity": "",
+        "short_name": ""
+    },
+    "model": "vocabularies.platform",
+    "pk": 1
+},{
+    "fields": {
+        "category": "Aircraft",
+        "long_name": "Airbus A340-600",
+        "series_entity": "dummy_included_in_test_mode",
+        "short_name": "A340-600"
+    },
+    "model": "vocabularies.platform",
+    "pk": 2
+},{
+    "fields": {
+        "category": "EARTH SCIENCE",
+        "term": "",
+        "detailed_variable": "",
+        "variable_level_2": "",
+        "variable_level_3": "",
+        "variable_level_1": "",
+        "topic": ""
+    },
+    "model": "vocabularies.sciencekeyword",
+    "pk": 1
+},{
+    "fields": {
+        "category": "EARTH SCIENCE SERVICES",
+        "term": "dummy_included_in_test_mode",
+        "detailed_variable": "dummy_included_in_test_mode",
+        "variable_level_2": "dummy_included_in_test_mode",
+        "variable_level_3": "dummy_included_in_test_mode",
+        "variable_level_1": "dummy_included_in_test_mode",
+        "topic": "dummy_included_in_test_mode"
+    },
+    "model": "vocabularies.sciencekeyword",
+    "pk": 2
+},{
+    "fields": {
+        "short_name": "",
+        "data_center_url": "",
+        "long_name": "",
+        "bucket_level2": "",
+        "bucket_level3": "",
+        "bucket_level0": "ACADEMIC",
+        "bucket_level1": ""
+    },
+    "model": "vocabularies.datacenter",
+    "pk": 1
+},{
+    "fields": {
+        "short_name": "AALTO",
+        "data_center_url": "dummy_included_in_test_mode",
+        "long_name": "Aalto University",
+        "bucket_level2": "dummy_included_in_test_mode",
+        "bucket_level3": "dummy_included_in_test_mode",
+        "bucket_level0": "ACADEMIC",
+        "bucket_level1": "dummy_included_in_test_mode"
+    },
+    "model": "vocabularies.datacenter",
+    "pk": 2
+},{
+    "fields": {
+        "range": "1 km - < 10 km or approximately .01 degree - < .09 degree"
+    },
+    "model": "vocabularies.horizontaldataresolution",
+    "pk": 1
+},{
+    "fields": {
+        "range": "1 meter - < 30 meters"
+    },
+    "model": "vocabularies.horizontaldataresolution",
+    "pk": 2
+},{
+    "fields": {
+        "range": "1 meter - < 10 meters"
+    },
+    "model": "vocabularies.verticaldataresolution",
+    "pk": 1
+},{
+    "fields": {
+        "range": "10 meters - < 30 meters"
+    },
+    "model": "vocabularies.verticaldataresolution",
+    "pk": 2
+},{
+    "fields": {
+        "range": "1 minute - < 1 hour"
+    },
+    "model": "vocabularies.temporaldataresolution",
+    "pk": 1
+},{
+    "fields": {
+        "range": "1 second - < 1 minute"
+    },
+    "model": "vocabularies.temporaldataresolution",
+    "pk": 2
+},{
+    "fields": {
+        "long_name": "",
+        "bucket": "A - C",
+        "short_name": ""
+    },
+    "model": "vocabularies.project",
+    "pk": 1
+},{
+    "fields": {
+        "long_name": "ARCATLAS",
+        "bucket": "A - C",
+        "short_name": "AA"
+    },
+    "model": "vocabularies.project",
+    "pk": 2
+},{
+    "fields": {
+        "name": "Farming"
+    },
+    "model": "vocabularies.isotopiccategory",
+    "pk": 1
+},{
+    "fields": {
+        "units": "Hz",
+        "standard_name": "surface_backwards_doppler_frequency_shift_of_radar_wave_due_to_surface_velocity",
+        "gcmd_science_keyword": null,
+        "short_name": "fdg"
+    },
+    "model": "vocabularies.parameter",
+    "pk": 1
+},{
+    "fields": {
+        "units": "Hz",
+        "standard_name": "predicted_surface_backwards_doppler_frequency_shift_of_radar_wave",
+        "gcmd_science_keyword": null,
+        "short_name": "fdp"
+    },
+    "model": "vocabularies.parameter",
+    "pk": 2
+},{
+    "fields": {
+        "category": "VERTICAL LOCATION",
+        "type": "predicted_surface_backwards_doppler_frequency_shift_of_radar_wave",
+        "subregion1": "dummy_included_in_test_mode",
+        "subregion2": "dummy_included_in_test_mode",
+        "subregion3": "dummy_included_in_test_mode"
+    },
+    "model": "vocabularies.Location",
+    "pk": 1
+}]

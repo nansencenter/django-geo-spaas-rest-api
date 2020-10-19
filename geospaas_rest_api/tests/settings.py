@@ -18,7 +18,6 @@ SECRET_KEY = 'chu2p96if%&^09w6okqjwc-%+hmpc1t3@b&i8*+3nvdk!xpdb0'
 INSTALLED_APPS = [
     'leaflet',
     'django_forms_bootstrap',
-    'geospaas.base_viewer',
     'geospaas.catalog',
     'geospaas.vocabularies',
     'django.contrib.sessions',
@@ -27,7 +26,8 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.messages',
-    'geospaas_rest_api'
+    'geospaas_rest_api',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [
@@ -37,7 +37,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
 ]
 
-ROOT_URLCONF = 'tests.urls'
+ROOT_URLCONF = 'geospaas_rest_api.tests.urls'
 
 TEMPLATES = [
     {
@@ -75,3 +75,5 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
 "/project/static",
 ]
+
+CELERY_RESULT_BACKEND = 'django-db'
