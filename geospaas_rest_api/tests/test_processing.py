@@ -336,8 +336,8 @@ class JobViewSetTests(django.test.TestCase):
             mock_get_result.return_value = (mock_result, False)
             self.assertJSONEqual(self.client.get('/api/jobs/').content, expected_jobs)
 
-    def test_get_job(self):
-        """Test that a single task can be retrieved"""
+    def test_get_unfinished_job(self):
+        """Test that a single unfinished job can be retrieved"""
         expected_job = {
             "id": 1,
             "task_id": "df2bfb58-7d2e-4f83-9dc2-bac95a421c72",
@@ -348,6 +348,25 @@ class JobViewSetTests(django.test.TestCase):
             mock_result = mock.Mock()
             mock_result.state = 'PLACEHOLDER'
             mock_get_result.return_value = (mock_result, False)
+            response = self.client.get('/api/jobs/1/')
+            self.assertJSONEqual(response.content, expected_job)
+
+    def test_get_successful_job(self):
+        """Test that a successful job can be retrieved"""
+        expected_job = {
+            "id": 1,
+            "task_id": "df2bfb58-7d2e-4f83-9dc2-bac95a421c72",
+            "status": 'SUCCESS',
+            "result": [1, 'foo'],
+            "date_created": '2020-07-16T13:53:30Z',
+            "date_done": 'bar'
+        }
+        with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
+            mock_result = mock.Mock()
+            mock_result.state = 'SUCCESS'
+            mock_result.result = [1, 'foo']
+            mock_result.date_done = 'bar'
+            mock_get_result.return_value = (mock_result, True)
             response = self.client.get('/api/jobs/1/')
             self.assertJSONEqual(response.content, expected_job)
 

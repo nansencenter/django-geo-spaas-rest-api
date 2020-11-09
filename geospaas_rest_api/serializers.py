@@ -39,7 +39,7 @@ class JobSerializer(rest_framework.serializers.Serializer):
         if finished:
             representation['date_done'] = current_result.date_done
             if current_result.state == 'SUCCESS':
-                representation['result'] = str(current_result.result)
+                representation['result'] = current_result.result
 
         return representation
 
