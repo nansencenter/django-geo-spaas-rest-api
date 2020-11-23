@@ -5,7 +5,6 @@ import geospaas.catalog.models
 import geospaas.vocabularies.models
 import rest_framework.mixins
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
-from rest_framework_filters.backends import RestFrameworkFilterBackend
 
 import geospaas_rest_api.filters as filters
 import geospaas_rest_api.models as models
@@ -84,7 +83,6 @@ class DatasetViewSet(ReadOnlyModelViewSet):
     """API endpoint to view Datasets"""
     queryset = geospaas.catalog.models.Dataset.objects.all().order_by('time_coverage_start')
     serializer_class = serializers.DatasetSerializer
-    filter_backends = [filters.OldDatasetFilter, RestFrameworkFilterBackend]
     filterset_class = filters.DatasetFilter
 
 
@@ -99,7 +97,6 @@ class DatasetURIViewSet(ReadOnlyModelViewSet):
     """API endpoint to view DatasetURIs"""
     queryset = geospaas.catalog.models.DatasetURI.objects.all()
     serializer_class = serializers.DatasetURISerializer
-    filter_backends = [filters.OldDatasetURIFilter, RestFrameworkFilterBackend]
     filterset_class = filters.DatasetURIFilter
 
 

@@ -76,4 +76,12 @@ STATICFILES_DIRS = [
 "/project/static",
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': (
+        'rest_framework_filters.backends.RestFrameworkFilterBackend',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'geospaas_rest_api.pagination.PKOrderedCursorPagination',
+    'PAGE_SIZE': 100
+}
+
 CELERY_RESULT_BACKEND = 'django-db'
