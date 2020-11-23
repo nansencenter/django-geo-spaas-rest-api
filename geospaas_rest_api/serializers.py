@@ -147,3 +147,24 @@ class DataCenterSerializer(rest_framework.serializers.ModelSerializer):
     class Meta:
         model = geospaas.vocabularies.models.DataCenter
         fields = '__all__'
+
+
+class ISOTopicCategorySerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for ISOTopicCategory objects"""
+    class Meta:
+        model = geospaas.vocabularies.models.ISOTopicCategory
+        fields = '__all__'
+
+
+class ScienceKeywordSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for ScienceKeyword objects"""
+    class Meta:
+        model = geospaas.vocabularies.models.ScienceKeyword
+        fields = '__all__'
+
+
+class LocationSerializer(rest_framework.serializers.ModelSerializer):
+    """Serializer for Location objects"""
+    class Meta:
+        model = geospaas.vocabularies.models.Location
+        fields = '__all__'

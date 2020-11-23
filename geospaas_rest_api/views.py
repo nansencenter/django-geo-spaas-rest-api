@@ -104,3 +104,21 @@ class DataCenterViewSet(ReadOnlyModelViewSet):
     """API endpoint to view DataCenters"""
     queryset = geospaas.vocabularies.models.DataCenter.objects.all()
     serializer_class = serializers.DataCenterSerializer
+
+
+class ISOTopicCategoryViewSet(ReadOnlyModelViewSet):
+    """API endpoint to view ISOTopicCategories"""
+    queryset = geospaas.vocabularies.models.ISOTopicCategory.objects.all()
+    serializer_class = serializers.ISOTopicCategorySerializer
+
+
+class ScienceKeywordViewSet(ReadOnlyModelViewSet):
+    """API endpoint to view ScienceKeywords"""
+    queryset = geospaas.vocabularies.models.ScienceKeyword.objects.all()
+    serializer_class = serializers.ScienceKeywordSerializer
+
+
+class LocationViewSet(ReadOnlyModelViewSet):
+    """API endpoint to view Locations"""
+    queryset = geospaas.vocabularies.models.Location.objects.all()
+    serializer_class = serializers.LocationSerializer
