@@ -128,7 +128,7 @@ class BasicAPITests(django.test.TestCase):
         })
 
 
-class DatasetFilteringTests(django.test.TestCase):
+class OldDatasetFilteringTests(django.test.TestCase):
     """Tests dataset filtering based on diverse parameters"""
     fixtures = ["read_only_tests_data"]
 
@@ -251,7 +251,7 @@ class BrowsableAPIFilterRenderingContext(django.test.TestCase):
         self.view_mock = mock.MagicMock(spec=rest_framework.views.View)
         self.queryset = geospaas_rest_api.views.DatasetViewSet.queryset
 
-        self.filter = geospaas_rest_api.filters.DatasetFilter()
+        self.filter = geospaas_rest_api.filters.OldDatasetFilter()
 
         self.params_list = [
             self.filter.DATE_PARAM, self.filter.LOCATION_PARAM, self.filter.SOURCE_PARAM]
@@ -298,7 +298,7 @@ class BrowsableAPIFilterRenderingContext(django.test.TestCase):
         })
 
 
-class DatasetURIFilteringTests(django.test.TestCase):
+class OldDatasetURIFilterFilteringTests(django.test.TestCase):
     """Tests dataset URIs filtering based on diverse parameters"""
 
     fixtures = ["read_only_tests_data"]
