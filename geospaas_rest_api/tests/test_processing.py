@@ -23,70 +23,73 @@ class TaskViewSetTests(django.test.TestCase):
 
     def test_list_tasks(self):
         """The list of tasks must be returned"""
-        expected_tasks = [
-            {
-                'id': 4,
-                'content_encoding': 'utf-8',
-                'content_type': 'application/json',
-                'worker': 'celery@3b6b6202fcbe',
-                'traceback': None,
-                'task_kwargs': '{}',
-                'task_id': '733d3a63-7a5a-4a1e-8cf0-750ae393dd99',
-                'task_name': 'geospaas_processing.tasks.convert_to_idf',
-                'result': "[1, \"ftp://test/sentinel3_olci_l1_efr/S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.SEN3\"]",
-                'status': 'SUCCESS',
-                'task_args': "((1, 'ftp://test/dataset_1_S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.zip'),)",
-                'date_created': '2020-07-16T13:58:22.918000Z',
-                'date_done': '2020-07-16T13:58:21.201000Z',
-                'meta': "{\"children\": []}"
-            }, {
-                'id': 3,
-                'content_encoding': 'utf-8',
-                'content_type': 'application/json',
-                'worker': 'celery@3b6b6202fcbe',
-                'traceback': None,
-                'task_kwargs': '{}',
-                'task_id': '733d3a63-7a5a-4a1e-8cf0-750ae393dd98',
-                'task_name': 'geospaas_processing.tasks.convert_to_idf',
-                'result': "{\"pid\": 23, \"hostname\": \"celery@3b6b6202fcbe\"}",
-                'status': 'STARTED',
-                'task_args': "((1, 'ftp://test/dataset_1_S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.zip'),)",
-                'date_created': '2020-07-16T13:57:21.918000Z',
-                'date_done': '2020-07-16T13:57:21.918000Z',
-                'meta': "{\"children\": []}"
-            }, {
-                'id': 2,
-                'content_encoding': 'utf-8',
-                'content_type': 'application/json',
-                'worker': 'celery@3b6b6202fcbe',
-                'traceback': None,
-                'task_kwargs': '{}',
-                'task_id': 'df2bfb58-7d2e-4f83-9dc2-bac95a421c72',
-                'task_name': 'geospaas_processing.tasks.download',
-                'result': "[1, \"ftp://test/dataset_1_S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.zip\"]",
-                'status': 'SUCCESS',
-                'task_args': '(1,)',
-                'date_created': '2020-07-16T13:53:33.864000Z',
-                'date_done': '2020-07-16T13:57:21.912000Z',
-                'meta': "{\"children\": [[[\"733d3a63-7a5a-4a1e-8cf0-750ae393dd98\", null], null]]}"
-            }, {
-                'id': 1,
-                'content_encoding': 'utf-8',
-                'content_type': 'application/json',
-                'worker': 'celery@3b6b6202fcbe',
-                'traceback': None,
-                'task_kwargs': '{}',
-                'task_id': 'df2bfb58-7d2e-4f83-9dc2-bac95a421c71',
-                'task_name': 'geospaas_processing.tasks.download',
-                'result': "{\"pid\": 22, \"hostname\": \"celery@3b6b6202fcbe\"}",
-                'status': 'STARTED',
-                'task_args': '(1,)',
-                'date_created': '2020-07-16T13:52:33.864000Z',
-                'date_done': '2020-07-16T13:52:33.864000Z',
-                'meta': "{\"children\": []}"
-            }
-        ]
-        self.assertJSONEqual(self.client.get('/api/tasks/').content, expected_tasks)
+        expected_result = {
+            'next': None, 'previous': None,
+            'results': [
+                {
+                    'id': 4,
+                    'content_encoding': 'utf-8',
+                    'content_type': 'application/json',
+                    'worker': 'celery@3b6b6202fcbe',
+                    'traceback': None,
+                    'task_kwargs': '{}',
+                    'task_id': '733d3a63-7a5a-4a1e-8cf0-750ae393dd99',
+                    'task_name': 'geospaas_processing.tasks.convert_to_idf',
+                    'result': "[1, \"ftp://test/sentinel3_olci_l1_efr/S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.SEN3\"]",
+                    'status': 'SUCCESS',
+                    'task_args': "((1, 'ftp://test/dataset_1_S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.zip'),)",
+                    'date_created': '2020-07-16T13:58:22.918000Z',
+                    'date_done': '2020-07-16T13:58:21.201000Z',
+                    'meta': "{\"children\": []}"
+                }, {
+                    'id': 3,
+                    'content_encoding': 'utf-8',
+                    'content_type': 'application/json',
+                    'worker': 'celery@3b6b6202fcbe',
+                    'traceback': None,
+                    'task_kwargs': '{}',
+                    'task_id': '733d3a63-7a5a-4a1e-8cf0-750ae393dd98',
+                    'task_name': 'geospaas_processing.tasks.convert_to_idf',
+                    'result': "{\"pid\": 23, \"hostname\": \"celery@3b6b6202fcbe\"}",
+                    'status': 'STARTED',
+                    'task_args': "((1, 'ftp://test/dataset_1_S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.zip'),)",
+                    'date_created': '2020-07-16T13:57:21.918000Z',
+                    'date_done': '2020-07-16T13:57:21.918000Z',
+                    'meta': "{\"children\": []}"
+                }, {
+                    'id': 2,
+                    'content_encoding': 'utf-8',
+                    'content_type': 'application/json',
+                    'worker': 'celery@3b6b6202fcbe',
+                    'traceback': None,
+                    'task_kwargs': '{}',
+                    'task_id': 'df2bfb58-7d2e-4f83-9dc2-bac95a421c72',
+                    'task_name': 'geospaas_processing.tasks.download',
+                    'result': "[1, \"ftp://test/dataset_1_S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.zip\"]",
+                    'status': 'SUCCESS',
+                    'task_args': '(1,)',
+                    'date_created': '2020-07-16T13:53:33.864000Z',
+                    'date_done': '2020-07-16T13:57:21.912000Z',
+                    'meta': "{\"children\": [[[\"733d3a63-7a5a-4a1e-8cf0-750ae393dd98\", null], null]]}"
+                }, {
+                    'id': 1,
+                    'content_encoding': 'utf-8',
+                    'content_type': 'application/json',
+                    'worker': 'celery@3b6b6202fcbe',
+                    'traceback': None,
+                    'task_kwargs': '{}',
+                    'task_id': 'df2bfb58-7d2e-4f83-9dc2-bac95a421c71',
+                    'task_name': 'geospaas_processing.tasks.download',
+                    'result': "{\"pid\": 22, \"hostname\": \"celery@3b6b6202fcbe\"}",
+                    'status': 'STARTED',
+                    'task_args': '(1,)',
+                    'date_created': '2020-07-16T13:52:33.864000Z',
+                    'date_done': '2020-07-16T13:52:33.864000Z',
+                    'meta': "{\"children\": []}"
+                }
+            ]
+        }
+        self.assertJSONEqual(self.client.get('/api/tasks/').content, expected_result)
 
     def test_retrieve_task(self):
         """The representation of the task must be returned"""
@@ -316,25 +319,28 @@ class JobViewSetTests(django.test.TestCase):
 
     def test_list_jobs(self):
         """Test that the list of tasks can be retrieved"""
-        expected_jobs = [
-            {
-                "id": 2,
-                "task_id": "733d3a63-7a5a-4a1e-8cf0-750ae393dd99",
-                "status": 'PLACEHOLDER',
-                "date_created": '2020-07-16T13:58:01.918000Z',
-            },
-            {
-                "id": 1,
-                "task_id": "df2bfb58-7d2e-4f83-9dc2-bac95a421c72",
-                "status": 'PLACEHOLDER',
-                "date_created": '2020-07-16T13:53:30Z',
-            }
-        ]
+        expected_result = {
+            'next': None, 'previous': None,
+            'results': [
+                {
+                    "id": 2,
+                    "task_id": "733d3a63-7a5a-4a1e-8cf0-750ae393dd99",
+                    "status": 'PLACEHOLDER',
+                    "date_created": '2020-07-16T13:58:01.918000Z',
+                },
+                {
+                    "id": 1,
+                    "task_id": "df2bfb58-7d2e-4f83-9dc2-bac95a421c72",
+                    "status": 'PLACEHOLDER',
+                    "date_created": '2020-07-16T13:53:30Z',
+                }
+            ]
+        }
         with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
             mock_result = mock.Mock()
             mock_result.state = 'PLACEHOLDER'
             mock_get_result.return_value = (mock_result, False)
-            self.assertJSONEqual(self.client.get('/api/jobs/').content, expected_jobs)
+            self.assertJSONEqual(self.client.get('/api/jobs/').content, expected_result)
 
     def test_get_unfinished_job(self):
         """Test that a single unfinished job can be retrieved"""
