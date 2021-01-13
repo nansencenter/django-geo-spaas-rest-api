@@ -7,7 +7,7 @@ RUN apt update && \
     apt clean && rm -rf /var/lib/apt/lists/* && \
     pip install --no-cache-dir \
     'celery<5.0' \
-    django-celery-results \
+    'django-celery-results<2.0' \
     django-filter \
     djangorestframework \
     djangorestframework-filters==1.0.0dev2 \
