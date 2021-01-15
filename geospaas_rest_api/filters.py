@@ -1,19 +1,9 @@
 """
 Custom filters for the REST API
 """
-import datetime
-import re
-
-import dateutil.parser
 import rest_framework_filters
-from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.db.models import GeometryField
-from django.db.models import Value
-from django.db.models.functions import Concat
-from django.template import loader
 from django_filters.rest_framework.filters import CharFilter
-from rest_framework.exceptions import ValidationError
-from rest_framework.filters import BaseFilterBackend
 
 import geospaas.catalog.models
 import geospaas.vocabularies.models
