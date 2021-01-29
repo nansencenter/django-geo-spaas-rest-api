@@ -2,6 +2,7 @@
 Custom filters for the REST API
 """
 import rest_framework_filters
+from rest_framework.exceptions import ValidationError
 from django.contrib.gis.db.models import GeometryField
 from django_filters.rest_framework.filters import CharFilter
 
@@ -9,7 +10,29 @@ import geospaas.catalog.models
 import geospaas.vocabularies.models
 
 
-class ScienceKeywordFilter(rest_framework_filters.FilterSet):
+class StrictFilterSet(rest_framework_filters.FilterSet):
+    """FilterSet which raises an exception when query
+    parameters don't match the available filters
+    """
+
+    def get_invalid_lookups(self):
+        """Get the query parameters which are not valid lookups"""
+        invalid_lookups = []
+        for query_parameter in self.data:
+            if self.relationship and not query_parameter.startswith(self.relationship):
+                continue
+            if not self.get_param_filter_name(query_parameter, rel=self.relationship):
+                invalid_lookups.append(query_parameter)
+        return invalid_lookups
+
+    def filter_queryset(self, queryset):
+        invalid_lookups = self.get_invalid_lookups()
+        if invalid_lookups:
+            raise ValidationError(f"Invalid lookups found: {invalid_lookups}")
+        return super().filter_queryset(queryset)
+
+
+class ScienceKeywordFilter(StrictFilterSet):
     """Filter for ScienceKeyword"""
     class Meta:
         model = geospaas.vocabularies.models.ScienceKeyword
@@ -24,7 +47,7 @@ class ScienceKeywordFilter(rest_framework_filters.FilterSet):
         }
 
 
-class ParameterFilter(rest_framework_filters.FilterSet):
+class ParameterFilter(StrictFilterSet):
     """Filter for Parameters"""
     gcmd_science_keyword = rest_framework_filters.RelatedFilter(
         ScienceKeywordFilter,
@@ -40,7 +63,7 @@ class ParameterFilter(rest_framework_filters.FilterSet):
         }
 
 
-class InstrumentFilter(rest_framework_filters.FilterSet):
+class InstrumentFilter(StrictFilterSet):
     """Filter for Instruments"""
     class Meta:
         model = geospaas.vocabularies.models.Instrument
@@ -54,7 +77,7 @@ class InstrumentFilter(rest_framework_filters.FilterSet):
         }
 
 
-class PlatformFilter(rest_framework_filters.FilterSet):
+class PlatformFilter(StrictFilterSet):
     """Filter for Platforms"""
     class Meta:
         model = geospaas.vocabularies.models.Platform
@@ -66,7 +89,7 @@ class PlatformFilter(rest_framework_filters.FilterSet):
         }
 
 
-class DataCenterFilter(rest_framework_filters.FilterSet):
+class DataCenterFilter(StrictFilterSet):
     """Filter for DataCenters"""
     class Meta:
         model = geospaas.vocabularies.models.DataCenter
@@ -81,14 +104,14 @@ class DataCenterFilter(rest_framework_filters.FilterSet):
         }
 
 
-class ISOTopicCategoryFilter(rest_framework_filters.FilterSet):
+class ISOTopicCategoryFilter(StrictFilterSet):
     """Filter for ISOTopicCategories"""
     class Meta:
         model = geospaas.vocabularies.models.ISOTopicCategory
         fields = {'name': '__all__'}
 
 
-class LocationFilter(rest_framework_filters.FilterSet):
+class LocationFilter(StrictFilterSet):
     """Filter for Locations"""
     class Meta:
         model = geospaas.vocabularies.models.Location
@@ -101,7 +124,7 @@ class LocationFilter(rest_framework_filters.FilterSet):
         }
 
 
-class GeographicLocationFilter(rest_framework_filters.FilterSet):
+class GeographicLocationFilter(StrictFilterSet):
     """Filter for GeographicLocations"""
 
     class Meta:
@@ -116,7 +139,7 @@ class GeographicLocationFilter(rest_framework_filters.FilterSet):
         }
 
 
-class SourceFilter(rest_framework_filters.FilterSet):
+class SourceFilter(StrictFilterSet):
     """Filter for Sources"""
     instrument = rest_framework_filters.RelatedFilter(
         InstrumentFilter,
@@ -130,7 +153,7 @@ class SourceFilter(rest_framework_filters.FilterSet):
     )
 
 
-class PersonnelFilter(rest_framework_filters.FilterSet):
+class PersonnelFilter(StrictFilterSet):
     """Filter for Personnel objects"""
     class Meta:
         model = geospaas.catalog.models.Personnel
@@ -145,7 +168,7 @@ class PersonnelFilter(rest_framework_filters.FilterSet):
         }
 
 
-class RoleFilter(rest_framework_filters.FilterSet):
+class RoleFilter(StrictFilterSet):
     """Filter for Roles"""
     personnel = rest_framework_filters.RelatedFilter(
         PersonnelFilter,
@@ -157,7 +180,7 @@ class RoleFilter(rest_framework_filters.FilterSet):
         fields = {'role': '__all__'}
 
 
-class DatasetFilter(rest_framework_filters.FilterSet):
+class DatasetFilter(StrictFilterSet):
     """Filter for Datasets"""
     iso_topic_category = rest_framework_filters.RelatedFilter(
         ISOTopicCategoryFilter,
@@ -203,7 +226,7 @@ class DatasetFilter(rest_framework_filters.FilterSet):
         }
 
 
-class DatasetURIFilter(rest_framework_filters.FilterSet):
+class DatasetURIFilter(StrictFilterSet):
     """Filter for DatasetURIs"""
     dataset = rest_framework_filters.RelatedFilter(
         DatasetFilter,
@@ -219,7 +242,7 @@ class DatasetURIFilter(rest_framework_filters.FilterSet):
         }
 
 
-class DatasetRelationshipFilter(rest_framework_filters.FilterSet):
+class DatasetRelationshipFilter(StrictFilterSet):
     """Filter for DatasetRelationships"""
     child = rest_framework_filters.RelatedFilter(
         DatasetFilter,
