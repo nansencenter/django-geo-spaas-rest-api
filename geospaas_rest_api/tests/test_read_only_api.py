@@ -273,6 +273,46 @@ class DatasetFilteringTests(django.test.TestCase):
             'next': None, 'previous': None, 'results': [self.DATASET_DICT_1]}
         )
 
+    def test_invalid_direct_lookup(self):
+        """An error must happen when an invalid lookup is submitted
+        on a "direct" (i.e. not related) filter
+        """
+        response = self.client.get('/api/datasets/?entry_id__contai=titusen')
+        self.assertEqual(response.status_code, 400)
+        self.assertJSONEqual(response.content, ["Invalid lookups found: ['entry_id__contai']"])
+
+
+    def test_invalid_related_lookup(self):
+        """An error must happen when an invalid lookup is submitted
+        on a related filter
+        """
+        response = self.client.get('/api/datasets/?source__instrument__short_name__foo=HXT')
+        self.assertEqual(response.status_code, 400)
+        self.assertJSONEqual(response.content, [
+            "Invalid lookups found: ['source__instrument__short_name__foo']"
+        ])
+
+    def test_invalid_lookup_multiple_parameters(self):
+        """An error must happen when an invalid lookup is submitted
+        on a filter, even when other parameters are present
+        """
+        response = self.client.get(
+            '/api/datasets/?entry_id__contai=titusen'
+            '&summary__contains=test'
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertJSONEqual(response.content, ["Invalid lookups found: ['entry_id__contai']"])
+
+    def test_invalid_exact_lookup(self):
+        """An error must happen when an invalid "exact" lookup
+        is submitted
+        """
+        response = self.client.get('/api/datasets/?sourc=1')
+        self.assertEqual(response.status_code, 400)
+        self.assertJSONEqual(response.content, [
+            "Invalid lookups found: ['sourc']"
+        ])
+
 
 class DatasetURIFilterFilteringTests(django.test.TestCase):
     """Tests dataset URIs filtering based on diverse parameters"""
