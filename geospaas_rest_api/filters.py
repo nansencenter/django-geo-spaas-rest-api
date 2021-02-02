@@ -216,8 +216,8 @@ class DatasetFilter(StrictFilterSet):
     class Meta:
         model = geospaas.catalog.models.Dataset
         fields = {
-            'id': ['exact'],
-            'entry_id': ['exact'],
+            'id': '__all__',
+            'entry_id': '__all__',
             'entry_title': '__all__',
             'summary': '__all__',
             'time_coverage_start': '__all__',
