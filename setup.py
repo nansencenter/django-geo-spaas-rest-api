@@ -19,6 +19,12 @@ setuptools.setup(
         "Operating System :: POSIX :: Linux",
     ],
     python_requires='>=3.7',
-    install_requires=['django_geo_spaas'],
+    install_requires=[
+        'django_geo_spaas',
+        'django-filter',
+        'djangorestframework',
+        'djangorestframework-filters==1.0.0dev2',
+        'markdown'
+    ],
     include_package_data=True,
 )
