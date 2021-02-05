@@ -314,7 +314,7 @@ class DatasetFilteringTests(django.test.TestCase):
         ])
 
 
-class DatasetURIFilterFilteringTests(django.test.TestCase):
+class DatasetURIFilteringTests(django.test.TestCase):
     """Tests dataset URIs filtering based on diverse parameters"""
 
     fixtures = ["read_only_tests_data"]
