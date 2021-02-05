@@ -28,6 +28,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'geospaas_rest_api',
     'django_celery_results',
+    'rest_framework',
+    'django_filters',
+    'rest_framework_filters',
 ]
 
 MIDDLEWARE = [
