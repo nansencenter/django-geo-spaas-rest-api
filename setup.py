@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="geospaas_rest_api",
-    version="2.0.0rc3",
+    version="2.0.0rc4",
     author="Adrien Perrin",
     author_email="adrien.perrin@nersc.no",
     description="REST API for GeoSPaaS",
