@@ -10,29 +10,7 @@ import geospaas.catalog.models
 import geospaas.vocabularies.models
 
 
-class StrictFilterSet(rest_framework_filters.FilterSet):
-    """FilterSet which raises an exception when query
-    parameters don't match the available filters
-    """
-
-    def get_invalid_lookups(self):
-        """Get the query parameters which are not valid lookups"""
-        invalid_lookups = []
-        for query_parameter in self.data:
-            if self.relationship and not query_parameter.startswith(self.relationship):
-                continue
-            if not self.get_param_filter_name(query_parameter, rel=self.relationship):
-                invalid_lookups.append(query_parameter)
-        return invalid_lookups
-
-    def filter_queryset(self, queryset):
-        invalid_lookups = self.get_invalid_lookups()
-        if invalid_lookups:
-            raise ValidationError(f"Invalid lookups found: {invalid_lookups}")
-        return super().filter_queryset(queryset)
-
-
-class ScienceKeywordFilter(StrictFilterSet):
+class ScienceKeywordFilter(rest_framework_filters.FilterSet):
     """Filter for ScienceKeyword"""
     class Meta:
         model = geospaas.vocabularies.models.ScienceKeyword
@@ -47,7 +25,7 @@ class ScienceKeywordFilter(StrictFilterSet):
         }
 
 
-class ParameterFilter(StrictFilterSet):
+class ParameterFilter(rest_framework_filters.FilterSet):
     """Filter for Parameters"""
     gcmd_science_keyword = rest_framework_filters.RelatedFilter(
         ScienceKeywordFilter,
@@ -63,7 +41,7 @@ class ParameterFilter(StrictFilterSet):
         }
 
 
-class InstrumentFilter(StrictFilterSet):
+class InstrumentFilter(rest_framework_filters.FilterSet):
     """Filter for Instruments"""
     class Meta:
         model = geospaas.vocabularies.models.Instrument
@@ -77,7 +55,7 @@ class InstrumentFilter(StrictFilterSet):
         }
 
 
-class PlatformFilter(StrictFilterSet):
+class PlatformFilter(rest_framework_filters.FilterSet):
     """Filter for Platforms"""
     class Meta:
         model = geospaas.vocabularies.models.Platform
@@ -89,7 +67,7 @@ class PlatformFilter(StrictFilterSet):
         }
 
 
-class DataCenterFilter(StrictFilterSet):
+class DataCenterFilter(rest_framework_filters.FilterSet):
     """Filter for DataCenters"""
     class Meta:
         model = geospaas.vocabularies.models.DataCenter
@@ -104,14 +82,14 @@ class DataCenterFilter(StrictFilterSet):
         }
 
 
-class ISOTopicCategoryFilter(StrictFilterSet):
+class ISOTopicCategoryFilter(rest_framework_filters.FilterSet):
     """Filter for ISOTopicCategories"""
     class Meta:
         model = geospaas.vocabularies.models.ISOTopicCategory
         fields = {'name': '__all__'}
 
 
-class LocationFilter(StrictFilterSet):
+class LocationFilter(rest_framework_filters.FilterSet):
     """Filter for Locations"""
     class Meta:
         model = geospaas.vocabularies.models.Location
@@ -124,7 +102,7 @@ class LocationFilter(StrictFilterSet):
         }
 
 
-class GeographicLocationFilter(StrictFilterSet):
+class GeographicLocationFilter(rest_framework_filters.FilterSet):
     """Filter for GeographicLocations"""
 
     class Meta:
@@ -139,7 +117,7 @@ class GeographicLocationFilter(StrictFilterSet):
         }
 
 
-class SourceFilter(StrictFilterSet):
+class SourceFilter(rest_framework_filters.FilterSet):
     """Filter for Sources"""
     instrument = rest_framework_filters.RelatedFilter(
         InstrumentFilter,
@@ -153,7 +131,7 @@ class SourceFilter(StrictFilterSet):
     )
 
 
-class PersonnelFilter(StrictFilterSet):
+class PersonnelFilter(rest_framework_filters.FilterSet):
     """Filter for Personnel objects"""
     class Meta:
         model = geospaas.catalog.models.Personnel
@@ -168,7 +146,7 @@ class PersonnelFilter(StrictFilterSet):
         }
 
 
-class RoleFilter(StrictFilterSet):
+class RoleFilter(rest_framework_filters.FilterSet):
     """Filter for Roles"""
     personnel = rest_framework_filters.RelatedFilter(
         PersonnelFilter,
@@ -180,7 +158,7 @@ class RoleFilter(StrictFilterSet):
         fields = {'role': '__all__'}
 
 
-class DatasetFilter(StrictFilterSet):
+class DatasetFilter(rest_framework_filters.FilterSet):
     """Filter for Datasets"""
     iso_topic_category = rest_framework_filters.RelatedFilter(
         ISOTopicCategoryFilter,
@@ -226,7 +204,7 @@ class DatasetFilter(StrictFilterSet):
         }
 
 
-class DatasetURIFilter(StrictFilterSet):
+class DatasetURIFilter(rest_framework_filters.FilterSet):
     """Filter for DatasetURIs"""
     dataset = rest_framework_filters.RelatedFilter(
         DatasetFilter,
@@ -242,7 +220,7 @@ class DatasetURIFilter(StrictFilterSet):
         }
 
 
-class DatasetRelationshipFilter(StrictFilterSet):
+class DatasetRelationshipFilter(rest_framework_filters.FilterSet):
     """Filter for DatasetRelationships"""
     child = rest_framework_filters.RelatedFilter(
         DatasetFilter,
