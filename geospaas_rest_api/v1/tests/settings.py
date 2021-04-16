@@ -27,10 +27,8 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.messages',
     'geospaas_rest_api',
+    'geospaas_rest_api.v1',
     'django_celery_results',
-    'rest_framework',
-    'django_filters',
-    'rest_framework_filters',
 ]
 
 MIDDLEWARE = [
@@ -40,7 +38,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
 ]
 
-ROOT_URLCONF = 'geospaas_rest_api.tests.urls'
+ROOT_URLCONF = 'geospaas_rest_api.v1.tests.urls'
 
 TEMPLATES = [
     {
@@ -78,13 +76,5 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
 "/project/static",
 ]
-
-REST_FRAMEWORK = {
-    'DEFAULT_FILTER_BACKENDS': (
-        'rest_framework_filters.backends.RestFrameworkFilterBackend',
-    ),
-    'DEFAULT_PAGINATION_CLASS': 'geospaas_rest_api.pagination.PKOrderedCursorPagination',
-    'PAGE_SIZE': 100
-}
 
 CELERY_RESULT_BACKEND = 'django-db'

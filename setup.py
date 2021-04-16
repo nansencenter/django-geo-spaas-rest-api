@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="geospaas_rest_api",
-    version="1.1.2",
+    version="2.0.0rc4",
     author="Adrien Perrin",
     author_email="adrien.perrin@nersc.no",
     description="REST API for GeoSPaaS",
@@ -19,6 +19,12 @@ setuptools.setup(
         "Operating System :: POSIX :: Linux",
     ],
     python_requires='>=3.7',
-    install_requires=['django_geo_spaas'],
+    install_requires=[
+        'django_geo_spaas',
+        'django-filter',
+        'djangorestframework',
+        'djangorestframework-filters==1.0.0dev2',
+        'markdown'
+    ],
     include_package_data=True,
 )

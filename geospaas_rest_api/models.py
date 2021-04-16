@@ -100,8 +100,7 @@ class ConvertJob(Job):
         tasks.download.signature(
             link=tasks.convert_to_idf.signature(
                 link=tasks.archive.signature(
-                    link=tasks.archive.signature(
-                        link=tasks.publish.signature()))))
+                        link=tasks.publish.signature())))
     ) if tasks else None
 
     @staticmethod

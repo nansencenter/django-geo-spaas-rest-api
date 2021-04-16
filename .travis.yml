@@ -22,7 +22,7 @@ script:
     -e TRAVIS_PULL_REQUEST
     -v "$(pwd):/src"
     $IMAGE_NAME
-    bash -c "coverage run --source=./geospaas_rest_api --omit='geospaas_rest_api/tests/*' runtests.py && coveralls"
+    bash -c "coverage run --source=./geospaas_rest_api --omit='geospaas_rest_api/tests/*' --omit='geospaas_rest_api/v1/*' runtests.py && coveralls"
 
 # If the build is triggered by a tag and an API token is defined for the branch
 # (in the travis repository settings), a package is built and added to the release
