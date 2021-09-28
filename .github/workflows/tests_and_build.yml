@@ -68,8 +68,17 @@ jobs:
              bash -c "coverage run --source=./geospaas_rest_api
              --omit='geospaas_rest_api/tests/*'
              --omit='geospaas_rest_api/v1/*'
-             runtests.py
-             && coveralls"
+             runtests.py"
+
+      - name: 'Install Python 3.7'
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.7'
+
+      - name: 'Upload coverage to coveralls.io'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pip install coveralls && coveralls --service=github
 
       - name: 'Build Python package'
         if: github.event_name == 'release'
