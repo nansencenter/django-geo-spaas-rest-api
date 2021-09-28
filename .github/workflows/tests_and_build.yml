@@ -1,10 +1,6 @@
 ---
 name: "Unit tests and builds"
-on:
-  push:
-    branches: ['**']
-  release:
-    types: [released]
+on: push
 env:
   TESTING_IMAGE_NAME: geospaas_rest_api_tests
 jobs:
