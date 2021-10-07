@@ -7,3 +7,4 @@ class PKOrderedCursorPagination(CursorPagination):
     """
     ordering = 'pk'
     page_size = 100
+    page_size_query_param = 'page_size'
