@@ -40,6 +40,8 @@ class JobSerializer(rest_framework.serializers.Serializer):
             representation['date_done'] = current_result.date_done
             if current_result.state == 'SUCCESS':
                 representation['result'] = current_result.result
+            elif current_result.state == 'FAILURE':
+                representation['result'] = current_result.traceback
 
         return representation
 
