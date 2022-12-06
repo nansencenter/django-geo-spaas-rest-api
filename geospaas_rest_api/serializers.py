@@ -51,7 +51,7 @@ class JobSerializer(rest_framework.serializers.Serializer):
     def create(self, validated_data):
         """Launches a long-running task, and returns the corresponding AsyncResult"""
         # This might need to be modified if the first task of a Job requires more arguments
-        job = self.jobs[validated_data['action']].run((validated_data['parameters']['dataset_id'],))
+        job = self.jobs[validated_data['action']].run(validated_data['parameters'])
         job.save()
         return job
 

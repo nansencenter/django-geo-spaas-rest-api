@@ -30,17 +30,21 @@ class Job(models.Model):
         """Checks that the parameters are valid for the current Job subclass"""
         raise NotImplementedError
 
+    @staticmethod
+    def make_task_parameters(parameters):
+        """Returns the right task parameters from the request data"""
+        raise NotImplementedError
+
     @classmethod
-    def run(cls, *args):
+    def run(cls, parameters):
         """
         This method should be used to create jobs.
         It runs the linked Celery tasks and returns the corresponding Job instance.
         """
-        if not tasks:
-            raise ImportError('geospaas_processing.tasks is not available')
         # Launch the series of tasks
         # Returns an AsyncResult object for the first task in the series
-        result = cls.signature.delay(*args)  # pylint: disable=no-member
+        args, kwargs = cls.make_task_parameters(parameters)
+        result = cls.signature.delay(*args, **kwargs)  # pylint: disable=no-member
         return cls(task_id=result.task_id)
 
     def get_current_task_result(self):
@@ -84,6 +88,10 @@ class DownloadJob(Job):
             raise ValidationError("'dataset_id' must be an integer")
         return parameters
 
+    @staticmethod
+    def make_task_parameters(parameters):
+        return (((parameters['dataset_id'],),), {})
+
 
 class ConvertJob(Job):
     """
@@ -124,3 +132,7 @@ class ConvertJob(Job):
                 f"'format' only accepts the following values: {', '.join(accepted_formats)}")
 
         return parameters
+
+    @staticmethod
+    def make_task_parameters(parameters):
+        return (((parameters['dataset_id'],),), {})
