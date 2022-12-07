@@ -1,4 +1,5 @@
 """Models for the GeoSPaaS REST API"""
+from collections.abc import Sequence
 try:
     import geospaas_processing.tasks as tasks
 except ImportError:
@@ -70,27 +71,45 @@ class DownloadJob(Job):
     class Meta:
         proxy = True
 
-    signature = (
-        tasks.download.signature(
-            link=tasks.archive.signature(
-                link=tasks.publish.signature()))
-    ) if tasks else None
-
     @staticmethod
     def check_parameters(parameters):
         """
         Checks that the following parameters are present with correct values:
           - dataset_id: integer
         """
-        if not set(parameters) == set(('dataset_id',)):
+        if not set(parameters).issubset(set(('dataset_id', 'bounding_box'))):
             raise ValidationError("The download action accepts only one parameter: 'dataset_id'")
         if not isinstance(parameters['dataset_id'], int):
             raise ValidationError("'dataset_id' must be an integer")
+        if ('bounding_box' in parameters and
+                not (isinstance(parameters['bounding_box'], Sequence) and
+                len(parameters['bounding_box']) == 4)):
+            raise ValidationError("'bounding_box' must be a sequence in the following format: "
+                                  "west, north, east, south")
         return parameters
 
     @staticmethod
     def make_task_parameters(parameters):
         return (((parameters['dataset_id'],),), {})
+
+    @classmethod
+    def run(cls, parameters):
+        """
+        This method should be used to create jobs.
+        It runs the linked Celery tasks and returns the corresponding Job instance.
+        """
+        # Launch the series of tasks
+        # Returns an AsyncResult object for the first task in the series
+        args, kwargs = cls.make_task_parameters(parameters)
+        signature = (
+            tasks.download.signature(
+                link=tasks.crop.signature(
+                    kwargs={'bounding_box': parameters.get('bounding_box', None)},
+                    link=tasks.archive.signature(
+                        link=tasks.publish.signature())))
+        ) if tasks else None
+        result = signature.delay(*args, **kwargs)  # pylint: disable=no-member
+        return cls(task_id=result.task_id)
 
 
 class ConvertJob(Job):
@@ -104,13 +123,6 @@ class ConvertJob(Job):
     class Meta:
         proxy = True
 
-    signature = (
-        tasks.download.signature(
-            link=tasks.convert_to_idf.signature(
-                link=tasks.archive.signature(
-                        link=tasks.publish.signature())))
-    ) if tasks else None
-
     @staticmethod
     def check_parameters(parameters):
         """
@@ -118,8 +130,8 @@ class ConvertJob(Job):
           - dataset_id: integer
           - format: value in ['idf']
         """
-        accepted_keys = ('dataset_id', 'format')
-        if not set(parameters) == set(accepted_keys):
+        accepted_keys = ('dataset_id', 'format', 'bounding_box')
+        if not set(parameters).issubset(set(accepted_keys)):
             raise ValidationError(
                 f"The download action accepts only these parameter: {', '.join(accepted_keys)}")
 
@@ -131,8 +143,34 @@ class ConvertJob(Job):
             raise ValidationError(
                 f"'format' only accepts the following values: {', '.join(accepted_formats)}")
 
+        if ('bounding_box' in parameters and
+                not (isinstance(parameters['bounding_box'], Sequence) and
+                     len(parameters['bounding_box']) == 4)):
+            raise ValidationError("'bounding_box' must be a sequence in the following format: "
+                                  "west, north, east, south")
+
         return parameters
 
     @staticmethod
     def make_task_parameters(parameters):
         return (((parameters['dataset_id'],),), {})
+
+    @classmethod
+    def run(cls, parameters):
+        """
+        This method should be used to create jobs.
+        It runs the linked Celery tasks and returns the corresponding Job instance.
+        """
+        # Launch the series of tasks
+        # Returns an AsyncResult object for the first task in the series
+        args, kwargs = cls.make_task_parameters(parameters)
+        signature = (
+            tasks.download.signature(
+                link=tasks.crop.signature(
+                    kwargs={'bounding_box': parameters.get('bounding_box', None)},
+                    link=tasks.convert_to_idf.signature(
+                        link=tasks.archive.signature(
+                            link=tasks.publish.signature()))))
+        ) if tasks else None
+        result = signature.delay(*args, **kwargs)  # pylint: disable=no-member
+        return cls(task_id=result.task_id)
