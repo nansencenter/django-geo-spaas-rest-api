@@ -156,7 +156,7 @@ class DownloadJob(Job):
         return (((parameters['dataset_id'],),), {})
 
 
-class ConvertJob(Job):
+class ConvertJob(Job):  # pylint: disable=abstract-method
     """Parameters management methods for all conversion jobs
     """
     @staticmethod
