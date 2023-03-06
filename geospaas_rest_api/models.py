@@ -159,6 +159,10 @@ class DownloadJob(Job):
 class ConvertJob(Job):  # pylint: disable=abstract-method
     """Parameters management methods for all conversion jobs
     """
+
+    class Meta:
+        proxy = True
+
     @staticmethod
     def check_parameters(parameters):
         """
