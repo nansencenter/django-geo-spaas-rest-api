@@ -1,4 +1,5 @@
 """Models for the GeoSPaaS REST API"""
+from collections.abc import Sequence
 try:
     import geospaas_processing.tasks.core as tasks_core
 except ImportError:
@@ -19,6 +20,7 @@ try:
 except ImportError:
     tasks_syntool = None
 
+import celery
 import dateutil.parser
 from celery.result import AsyncResult, GroupResult, ResultSet
 from django.db import models
@@ -41,6 +43,15 @@ class Job(models.Model):
     # Class attribute to be defined in child classes
     signature = None
 
+    @classmethod
+    def get_signature(cls, parameters):
+        """Returns a Celery signature which will be executed when the
+        job is run. Can be one task or several organized using a
+        canvas.
+        See https://docs.celeryq.dev/en/stable/userguide/canvas.html
+        """
+        raise NotImplementedError
+
     @staticmethod
     def check_parameters(parameters):
         """Checks that the parameters are valid for the current Job subclass"""
@@ -53,14 +64,11 @@ class Job(models.Model):
 
     @classmethod
     def run(cls, parameters):
+        """This method should be used to create jobs.
+        Should return a Job instance.
         """
-        This method should be used to create jobs.
-        It runs the linked Celery tasks and returns the corresponding Job instance.
-        """
-        # Launch the series of tasks
-        # Returns an AsyncResult object for the first task in the series
         args, kwargs = cls.make_task_parameters(parameters)
-        result = cls.signature.delay(*args, **kwargs)  # pylint: disable=no-member
+        result = cls.get_signature(parameters).delay(*args, **kwargs)
         return cls(task_id=result.task_id)
 
     def get_current_task_result(self):
@@ -86,27 +94,30 @@ class DownloadJob(Job):
     class Meta:
         proxy = True
 
-    signature = (
-        tasks_core.download.signature(
-            link=tasks_core.archive.signature(
-                link=tasks_core.publish.signature()))
-    ) if tasks_idf else None
-
-    def __init__(self, *args, **kwargs):
-        if not tasks_core:
-            raise ImportError('geospaas_processing.tasks.core is not available')
-        super().__init__(*args, **kwargs)
+    @classmethod
+    def get_signature(cls, parameters):
+        return celery.chain(
+            tasks_core.download.signature(),
+            tasks_core.crop.signature(
+                kwargs={'bounding_box': parameters.get('bounding_box', None)}),
+            tasks_core.archive.signature(),
+            tasks_core.publish.signature())
 
     @staticmethod
     def check_parameters(parameters):
-        """Checks that the following parameters are present with
-        correct values:
+        """
+        Checks that the following parameters are present with correct values:
           - dataset_id: integer
         """
-        if not set(parameters) == set(('dataset_id',)):
+        if not set(parameters).issubset(set(('dataset_id', 'bounding_box'))):
             raise ValidationError("The download action accepts only one parameter: 'dataset_id'")
         if not isinstance(parameters['dataset_id'], int):
             raise ValidationError("'dataset_id' must be an integer")
+        if ('bounding_box' in parameters and
+                not (isinstance(parameters['bounding_box'], Sequence) and
+                     len(parameters['bounding_box']) == 4)):
+            raise ValidationError("'bounding_box' must be a sequence in the following format: "
+                                  "west, north, east, south")
         return parameters
 
     @staticmethod
@@ -119,23 +130,29 @@ class ConvertJob(Job):
     """
     @staticmethod
     def check_parameters(parameters):
-        """Checks that the following parameters are present with
-        correct values:
+        """
+        Checks that the following parameters are present with correct values:
           - dataset_id: integer
           - format: value in ['idf']
         """
-        accepted_keys = ('dataset_id', 'format')
-        if not set(parameters) == set(accepted_keys):
+        accepted_keys = ('dataset_id', 'format', 'bounding_box')
+        if not set(parameters).issubset(set(accepted_keys)):
             raise ValidationError(
                 f"The download action accepts only these parameter: {', '.join(accepted_keys)}")
 
         if not isinstance(parameters['dataset_id'], int):
             raise ValidationError("'dataset_id' must be an integer")
 
-        accepted_formats = ('idf', 'syntool')
+        accepted_formats = ('idf',)
         if not parameters['format'] in accepted_formats:
             raise ValidationError(
                 f"'format' only accepts the following values: {', '.join(accepted_formats)}")
+
+        if ('bounding_box' in parameters and
+                not (isinstance(parameters['bounding_box'], Sequence) and
+                     len(parameters['bounding_box']) == 4)):
+            raise ValidationError("'bounding_box' must be a sequence in the following format: "
+                                  "west, north, east, south")
 
         return parameters
 
@@ -154,17 +171,15 @@ class IDFConvertJob(ConvertJob):
     class Meta:
         proxy = True
 
-    signature = (
-        tasks_core.download.signature(
-            link=tasks_idf.convert_to_idf.signature(
-                link=tasks_core.archive.signature(
-                    link=tasks_core.publish.signature())))
-    ) if tasks_idf and tasks_core else None
-
-    def __init__(self, *args, **kwargs):
-        if not (tasks_idf and tasks_core):
-            raise ImportError('geospaas_processing.tasks.idf or core is not available')
-        super().__init__(*args, **kwargs)
+    @classmethod
+    def get_signature(cls, parameters):
+        return celery.chain(
+            tasks_core.download.signature(),
+            tasks_core.crop.signature(
+                kwargs={'bounding_box': parameters.get('bounding_box', None)}),
+            tasks_idf.convert_to_idf.signature(),
+            tasks_core.archive.signature(),
+            tasks_core.publish.signature())
 
 
 class SyntoolConvertJob(ConvertJob):
@@ -173,18 +188,17 @@ class SyntoolConvertJob(ConvertJob):
     class Meta:
         proxy = True
 
-    signature = (
-        tasks_syntool.check_ingested.signature(
-            link=tasks_core.download.signature(
-                link=tasks_syntool.convert.signature(
-                    link=tasks_syntool.db_insert.signature(
-                        link=tasks_core.remove_downloaded.signature()))))
-    ) if tasks_syntool and tasks_core else None
-
-    def __init__(self, *args, **kwargs):
-        if not (tasks_syntool and tasks_core):
-            raise ImportError('geospaas_processing.tasks.syntool or core is not available')
-        super().__init__(*args, **kwargs)
+    @classmethod
+    def get_signature(cls, parameters):
+        return (
+            tasks_syntool.check_ingested.signature(),
+            tasks_core.download.signature(),
+            tasks_core.crop.signature(
+                kwargs={'bounding_box': parameters.get('bounding_box', None)}),
+            tasks_syntool.convert.signature(),
+            tasks_syntool.db_insert.signature(),
+            tasks_core.remove_downloaded.signature()
+        )
 
 
 class SyntoolCleanupJob(Job):
@@ -192,12 +206,9 @@ class SyntoolCleanupJob(Job):
     class Meta:
         proxy = True
 
-    signature = tasks_syntool.cleanup_ingested.signature() if tasks_syntool else None
-
-    def __init__(self, *args, **kwargs):
-        if not tasks_syntool:
-            raise ImportError('geospaas_processing.tasks.syntool is not available')
-        super().__init__(*args, **kwargs)
+    @classmethod
+    def get_signature(cls, parameters):
+        return tasks_syntool.cleanup_ingested.signature()
 
     @staticmethod
     def check_parameters(parameters):
@@ -231,14 +242,9 @@ class HarvestJob(Job):
     class Meta:
         proxy = True
 
-    signature = (
-        tasks_harvesting.start_harvest.signature()
-    ) if tasks_harvesting else None
-
-    def __init__(self, *args, **kwargs):
-        if not tasks_harvesting:
-            raise ImportError('geospaas_processing.tasks.harvesting is not available')
-        super().__init__(*args, **kwargs)
+    @classmethod
+    def get_signature(cls, parameters):
+        return tasks_harvesting.start_harvest.signature()
 
     @staticmethod
     def check_parameters(parameters):
