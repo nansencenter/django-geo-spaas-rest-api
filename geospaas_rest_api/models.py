@@ -58,8 +58,8 @@ def requires(*dependencies):
 
 
 class Job(models.Model):
-    """
-    Intermediate model that gives access to the status and result of a series of linked Celery tasks
+    """Base model that gives access to the status and result of
+    running one or more Celery tasks.
     """
     # Database fields
     task_id = models.CharField(
@@ -236,7 +236,7 @@ class SyntoolConvertJob(ConvertJob):
 
 @requires(tasks_syntool)
 class SyntoolCleanupJob(Job):
-    """Job whic cleans up ingested files older than a date"""
+    """Job which cleans up ingested files older than a date"""
     class Meta:
         proxy = True
 
