@@ -4,27 +4,27 @@ import functools
 import types
 try:
     import geospaas_processing.tasks.core as tasks_core
-except ImportError:
-    tasks_core = None
+except ImportError as error:
+    tasks_core = error.name
 
 try:
     import geospaas_processing.tasks.idf as tasks_idf
-except ImportError:
-    tasks_idf = None
+except ImportError as error:
+    tasks_idf = error.name
 
 try:
     import geospaas_processing.tasks.harvesting as tasks_harvesting
-except ImportError:
-    tasks_harvesting = None
+except ImportError as error:
+    tasks_harvesting = error.name
 
 try:
     import geospaas_processing.tasks.syntool as tasks_syntool
-except ImportError:
-    tasks_syntool = None
+except ImportError as error:
+    tasks_syntool = error.name
 
 import celery
 import dateutil.parser
-from celery.result import AsyncResult, GroupResult, ResultSet
+from celery.result import AsyncResult
 from django.db import models
 from rest_framework.exceptions import ValidationError
 
