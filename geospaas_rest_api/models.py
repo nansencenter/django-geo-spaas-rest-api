@@ -1,5 +1,7 @@
 """Models for the GeoSPaaS REST API"""
 from collections.abc import Sequence
+import functools
+import types
 try:
     import geospaas_processing.tasks.core as tasks_core
 except ImportError:
@@ -25,6 +27,34 @@ import dateutil.parser
 from celery.result import AsyncResult, GroupResult, ResultSet
 from django.db import models
 from rest_framework.exceptions import ValidationError
+
+
+def requires_func_decorator(*dependencies):
+    """Function decorator which raises an exception if a required
+    module is not available
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            missing_dependencies = []
+            for dependency in dependencies:
+                if not isinstance(dependency, types.ModuleType):
+                    missing_dependencies.append(dependency)
+            if missing_dependencies:
+                raise ImportError(f"{', '.join(d for d in missing_dependencies)} unavailable")
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def requires(*dependencies):
+    """Class decorator which applies requires_func_decorator() to the
+    __init__ method of a class
+    """
+    def decorator(cls):
+        cls.__init__ = requires_func_decorator(*dependencies)(cls.__init__)
+        return cls
+    return decorator
 
 
 class Job(models.Model):
@@ -84,6 +114,7 @@ class Job(models.Model):
         return current_result, finished
 
 
+@requires(tasks_core)
 class DownloadJob(Job):
     """
     Job which:
@@ -161,6 +192,7 @@ class ConvertJob(Job):
         return (((parameters['dataset_id'],),), {})
 
 
+@requires(tasks_core, tasks_idf)
 class IDFConvertJob(ConvertJob):
     """Job which:
       - downloads a dataset
@@ -182,6 +214,7 @@ class IDFConvertJob(ConvertJob):
             tasks_core.publish.signature())
 
 
+@requires(tasks_core, tasks_syntool)
 class SyntoolConvertJob(ConvertJob):
     """Job which converts a dataset into Syntool-displayable data
     """
@@ -201,6 +234,7 @@ class SyntoolConvertJob(ConvertJob):
         )
 
 
+@requires(tasks_syntool)
 class SyntoolCleanupJob(Job):
     """Job whic cleans up ingested files older than a date"""
     class Meta:
@@ -237,6 +271,7 @@ class SyntoolCleanupJob(Job):
             {'created': parameters.get('created', False)})
 
 
+@requires(tasks_harvesting)
 class HarvestJob(Job):
     """Job which harvests metadata into the database"""
     class Meta:
