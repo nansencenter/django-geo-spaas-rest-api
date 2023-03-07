@@ -127,12 +127,22 @@ class DownloadJob(Job):
 
     @classmethod
     def get_signature(cls, parameters):
-        return celery.chain(
-            tasks_core.download.signature(),
-            tasks_core.crop.signature(
-                kwargs={'bounding_box': parameters.get('bounding_box', None)}),
+        tasks = [tasks_core.download.signature()]
+
+        # only unarchive if cropping is needed
+        bounding_box = parameters.get('bounding_box', None)
+        if bounding_box:
+            tasks.extend([
+                tasks_core.unarchive.signature(),
+                tasks_core.crop.signature(
+                    kwargs={'bounding_box': parameters.get('bounding_box', None)}),
+            ])
+
+        tasks.extend([
             tasks_core.archive.signature(),
-            tasks_core.publish.signature())
+            tasks_core.publish.signature(),
+        ])
+        return celery.chain(tasks)
 
     @staticmethod
     def check_parameters(parameters):
@@ -211,6 +221,7 @@ class IDFConvertJob(ConvertJob):
     def get_signature(cls, parameters):
         return celery.chain(
             tasks_core.download.signature(),
+            tasks_core.unarchive.signature(),
             tasks_core.crop.signature(
                 kwargs={'bounding_box': parameters.get('bounding_box', None)}),
             tasks_idf.convert_to_idf.signature(),
@@ -230,6 +241,7 @@ class SyntoolConvertJob(ConvertJob):
         return (
             tasks_syntool.check_ingested.signature(),
             tasks_core.download.signature(),
+            tasks_core.unarchive.signature(),
             tasks_core.crop.signature(
                 kwargs={'bounding_box': parameters.get('bounding_box', None)}),
             tasks_syntool.convert.signature(),
