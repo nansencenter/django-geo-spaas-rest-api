@@ -462,10 +462,31 @@ class JobSerializerTests(django.test.TestCase):
                     "task_id": "df2bfb58-7d2e-4f83-9dc2-bac95a421c72",
                     "status": 'PLACEHOLDER',
                     "date_created": '2020-07-16T13:53:30Z',
-                }
-            )
+                })
 
-    def test_finished_job_representation_no_success(self):
+    def test_unfinished_job_parallel_tasks_representation(self):
+        """The representation of a job which has not finished executing
+        and is running several tasks in parallel should have the state
+        of each task in its status property.
+        """
+        with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
+            mock_result = mock.MagicMock(spec=celery.result.ResultSet)
+            mock_result.__iter__.return_value = [mock.Mock(task_id='foo', state='PLACEHOLDER1'),
+                                                 mock.Mock(task_id='bar', state='PLACEHOLDER2')]
+            mock_get_result.return_value = (mock_result, False)
+            self.assertDictEqual(
+                serializers.JobSerializer().to_representation(models.Job.objects.get(id=1)),
+                {
+                    "id": 1,
+                    "task_id": "df2bfb58-7d2e-4f83-9dc2-bac95a421c72",
+                    "status": {
+                        'foo': 'PLACEHOLDER1',
+                        'bar': 'PLACEHOLDER2',
+                    },
+                    "date_created": '2020-07-16T13:53:30Z',
+                })
+
+    def test_finished_job_representation(self):
         """
         The representation of a job which has finished executing
         should have the following fields:
@@ -474,7 +495,7 @@ class JobSerializerTests(django.test.TestCase):
           - status
           - date_created
           - date_done
-          - result if the status is success
+          - result
         """
         expected_base_dict = {
             "id": 1,
@@ -498,5 +519,31 @@ class JobSerializerTests(django.test.TestCase):
             expected_base_dict['status'] = 'SUCCESS'
             self.assertDictEqual(
                 serializers.JobSerializer().to_representation(models.Job.objects.get(id=1)),
-                {**expected_base_dict, 'result': 'PLACEHOLDER'}
-            )
+                {**expected_base_dict, 'result': 'PLACEHOLDER'})
+
+            mock_result.state = 'FAILURE'
+            mock_result.traceback = 'error happened'
+            expected_base_dict['status'] = 'FAILURE'
+            self.assertDictEqual(
+                serializers.JobSerializer().to_representation(models.Job.objects.get(id=1)),
+                {**expected_base_dict, 'result': 'error happened'})
+
+    def test_choose_job_class(self):
+        """Test getting the right class based on the action parameter
+        """
+        serializer = serializers.JobSerializer()
+        self.assertEqual(
+            serializer.choose_job_class({'action': 'download', 'parameters': {}}),
+            models.DownloadJob)
+        self.assertEqual(
+            serializer.choose_job_class({'action': 'convert', 'parameters': {'format': 'idf'}}),
+            models.IDFConvertJob)
+        self.assertEqual(
+            serializer.choose_job_class({'action': 'convert', 'parameters': {'format': 'syntool'}}),
+            models.SyntoolConvertJob)
+        self.assertEqual(
+            serializer.choose_job_class({'action': 'harvest', 'parameters': {}}),
+            models.HarvestJob)
+        self.assertEqual(
+            serializer.choose_job_class({'action': 'syntool_cleanup'}),
+            models.SyntoolCleanupJob)
