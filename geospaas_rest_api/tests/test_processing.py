@@ -266,29 +266,29 @@ class ConvertJob(unittest.TestCase):
 
     def test_check_parameters_ok(self):
         """Test the checking of correct parameters"""
-        parameters = {'dataset_id': 1, 'format': 'idf'}
+        parameters = {'dataset_id': 1,}
         self.assertEqual(models.ConvertJob.check_parameters(parameters), parameters)
 
     def test_check_parameters_wrong_key(self):
         """`check_parameters()` must raise an exception if there is a wrong key in the parameters"""
-        parameters = {'wrong_key': 1, 'format': 'idf'}
+        parameters = {'wrong_key': 1}
         with self.assertRaises(ValidationError) as raised:
             models.ConvertJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
             [ErrorDetail(string="The download action accepts only these parameter: "
-                                "dataset_id, format, bounding_box",
+                                "dataset_id, bounding_box",
                          code='invalid')])
 
     def test_check_parameters_extra_param(self):
         """`check_parameters()` must raise an exception if an extra parameter is given"""
-        parameters = {'dataset_id': 1, 'format': 'idf', 'extra_param': 'foo'}
+        parameters = {'dataset_id': 1, 'extra_param': 'foo'}
         with self.assertRaises(ValidationError) as raised:
             models.ConvertJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
             [ErrorDetail(string="The download action accepts only these parameter: "
-                                "dataset_id, format, bounding_box",
+                                "dataset_id, bounding_box",
                          code='invalid')])
 
     def test_check_parameters_wrong_type_for_dataset_id(self):
@@ -296,26 +296,21 @@ class ConvertJob(unittest.TestCase):
         `check_parameters()` must raise an exception if
         the 'dataset_id' value is of the wrong type
         """
-        parameters = {'dataset_id': '1', 'format': 'idf'}
+        parameters = {'dataset_id': '1'}
         with self.assertRaises(ValidationError) as raised:
             models.ConvertJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(string="'dataset_id' must be an integer", code='invalid')]
-        )
+            [ErrorDetail(string="'dataset_id' must be an integer", code='invalid')])
 
-    def test_check_parameters_wrong_value_for_format(self):
+    def test_check_parameters_wrong_bounding_box_type(self):
+        """`check_parameters()` must raise an exception if the
+        'bounding_box' value is of the wrong type or length
         """
-        `check_parameters()` must raise an exception if
-        the 'dataset_id' value is of the wrong type
-        """
-        parameters = {'dataset_id': 1, 'format': 'nc'}
-        with self.assertRaises(ValidationError) as raised:
-            models.ConvertJob.check_parameters(parameters)
-        self.assertListEqual(
-            raised.exception.detail,
-            [ErrorDetail(string="'format' only accepts the following values: idf", code='invalid')]
-        )
+        with self.assertRaises(ValidationError):
+            models.ConvertJob.check_parameters({'dataset_id': 1, 'bounding_box': '2'})
+        with self.assertRaises(ValidationError):
+            models.ConvertJob.check_parameters({'dataset_id': 1, 'bounding_box': [2]})
 
 
 class JobViewSetTests(django.test.TestCase):
