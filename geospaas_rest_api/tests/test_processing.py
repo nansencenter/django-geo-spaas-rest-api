@@ -261,7 +261,7 @@ class DownloadJobTests(unittest.TestCase):
             models.DownloadJob.check_parameters({'dataset_id': 1, 'bounding_box': [2]})
 
 
-class ConvertJob(unittest.TestCase):
+class ConvertJobTests(unittest.TestCase):
     """Tests for the ConvertJob class"""
 
     def test_check_parameters_ok(self):
