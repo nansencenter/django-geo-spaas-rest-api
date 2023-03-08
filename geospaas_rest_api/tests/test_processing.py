@@ -117,13 +117,23 @@ class JobModelTests(django.test.TestCase):
 
     fixtures = ['processing_tests_data']
 
-    def test_error_on_check_parameters_execution(self):
+    def test_abstract_check_parameters(self):
         """
         Any attempt to access the signature attribute on the
         `Job` class should raise a NotImplementedError
         """
         with self.assertRaises(NotImplementedError):
-            models.Job.check_parameters(None)
+            models.Job.check_parameters({})
+
+    def test_abstract_get_signature(self):
+        """get_signature() should raise a NotImplementedError"""
+        with self.assertRaises(NotImplementedError):
+            models.Job.get_signature({})
+
+    def test_abstract_make_task_parameters(self):
+        """make_task_parameters() should raise a NotImplementedError"""
+        with self.assertRaises(NotImplementedError):
+            models.Job.make_task_parameters({})
 
     def test_run_job(self):
         """
