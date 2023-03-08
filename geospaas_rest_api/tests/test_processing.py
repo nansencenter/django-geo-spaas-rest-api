@@ -184,6 +184,38 @@ class DownloadJobTests(unittest.TestCase):
             with self.assertRaises(ImportError):
                 models.DownloadJob()
 
+    def test_get_signature_no_cropping(self):
+        """Test getting the right signature when no cropping is
+        required
+        """
+        with mock.patch('geospaas_rest_api.models.tasks_core') as mock_tasks:
+            signature = models.DownloadJob.get_signature({})
+        self.assertEqual(
+            signature,
+            celery.chain([
+                mock_tasks.download.signature.return_value,
+                mock_tasks.download.archive.return_value,
+                mock_tasks.download.publish.return_value,
+            ]))
+
+    def test_get_signature_cropping(self):
+        """Test getting the right signature when cropping is required
+        """
+        with mock.patch('geospaas_rest_api.models.tasks_core') as mock_tasks:
+            signature = models.DownloadJob.get_signature({'bounding_box': [0, 20, 20, 0]})
+        self.assertEqual(
+            signature,
+            celery.chain([
+                mock_tasks.download.signature.return_value,
+                mock_tasks.unarchive.signature.return_value,
+                mock_tasks.crop.signature.return_value,
+                mock_tasks.download.archive.return_value,
+                mock_tasks.download.publish.return_value,
+            ]))
+        self.assertListEqual(
+            mock_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
+            [0, 20, 20, 0])
+
     def test_check_parameters_ok(self):
         """Test the checking of correct parameters"""
         parameters = {'dataset_id': 1}
@@ -197,8 +229,7 @@ class DownloadJobTests(unittest.TestCase):
         self.assertListEqual(
             raised.exception.detail,
             [ErrorDetail(string="The download action accepts only one parameter: 'dataset_id'",
-                         code='invalid')]
-        )
+                         code='invalid')])
 
     def test_check_parameters_extra_param(self):
         """`check_parameters()` must raise an exception if an extra parameter is given"""
@@ -208,21 +239,26 @@ class DownloadJobTests(unittest.TestCase):
         self.assertListEqual(
             raised.exception.detail,
             [ErrorDetail(string="The download action accepts only one parameter: 'dataset_id'",
-                         code='invalid')]
-        )
+                         code='invalid')])
 
-    def test_check_parameters_wrong_type(self):
+    def test_check_parameters_wrong_id_type(self):
+        """`check_parameters()` must raise an exception if the
+        'dataset_id' value is of the wrong type
         """
-        `check_parameters()` must raise an exception if
-        the 'dataset_id' value is of the wrong type
-        """
-        parameters = {'dataset_id': '1'}
         with self.assertRaises(ValidationError) as raised:
-            models.DownloadJob.check_parameters(parameters)
+            models.DownloadJob.check_parameters({'dataset_id': '1'})
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(string="'dataset_id' must be an integer", code='invalid')]
-        )
+            [ErrorDetail(string="'dataset_id' must be an integer", code='invalid')])
+
+    def test_check_parameters_wrong_bounding_box_type(self):
+        """`check_parameters()` must raise an exception if the
+        'bounding_box' value is of the wrong type or length
+        """
+        with self.assertRaises(ValidationError):
+            models.DownloadJob.check_parameters({'dataset_id': 1, 'bounding_box': '2'})
+        with self.assertRaises(ValidationError):
+            models.DownloadJob.check_parameters({'dataset_id': 1, 'bounding_box': [2]})
 
 
 class ConvertJob(unittest.TestCase):
