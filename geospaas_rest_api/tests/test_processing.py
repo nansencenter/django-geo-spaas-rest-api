@@ -117,12 +117,6 @@ class JobModelTests(django.test.TestCase):
 
     fixtures = ['processing_tests_data']
 
-    def setUp(self):
-        # This mock is necessary to avoid disabling the TaskViewSet when tests are run in an
-        # environment where geospaas_processing is not installed.
-        mock.patch('geospaas_rest_api.models.tasks').start()
-        self.addCleanup(mock.patch.stopall)
-
     def test_error_on_check_parameters_execution(self):
         """
         Any attempt to access the signature attribute on the
@@ -136,18 +130,13 @@ class JobModelTests(django.test.TestCase):
         `Job.run()` must launch the celery tasks and
         return a job instance pointing to the first task
         """
-        with mock.patch.object(models.Job, 'signature') as mock_signature:
-            mock_signature.delay.return_value.task_id = 1
-            job = models.Job.run('foo')
-        mock_signature.delay.assert_called_with('foo')
+        with mock.patch.object(models.Job, 'get_signature') as mock_get_signature, \
+             mock.patch.object(models.Job, 'make_task_parameters') as mock_make_params:
+            mock_get_signature.return_value.delay.return_value.task_id = 1
+            mock_make_params.side_effect = lambda p: ([], p)
+            job = models.Job.run({'foo': 'bar'})
+        mock_get_signature.return_value.delay.assert_called_with(foo='bar')
         self.assertIsInstance(job, models.Job)
-
-    def test_run_job_error_if_tasks_not_importable(self):
-        """`Job.run()` must raise an exception if `geospaas_processing.tasks` is not importable"""
-        with mock.patch('geospaas_rest_api.models.tasks', None):
-            with mock.patch.object(models.Job, 'signature'):
-                with self.assertRaises(ImportError):
-                    models.Job.run()
 
     def test_get_current_task_result(self):
         """
@@ -176,6 +165,14 @@ class JobModelTests(django.test.TestCase):
 
 class DownloadJobTests(unittest.TestCase):
     """Tests for the DownloadJob class"""
+
+    def test_requirement_error(self):
+        """An exception must be raised if one of the requirements is
+        missing when instantiating
+        """
+        with mock.patch('geospaas_rest_api.models.tasks_core', None):
+            with self.assertRaises(ImportError):
+                models.DownloadJob()
 
     def test_check_parameters_ok(self):
         """Test the checking of correct parameters"""
@@ -233,10 +230,9 @@ class ConvertJob(unittest.TestCase):
             models.ConvertJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(
-                string="The download action accepts only these parameter: dataset_id, format",
-                code='invalid')]
-        )
+            [ErrorDetail(string="The download action accepts only these parameter: "
+                                "dataset_id, format, bounding_box",
+                         code='invalid')])
 
     def test_check_parameters_extra_param(self):
         """`check_parameters()` must raise an exception if an extra parameter is given"""
@@ -245,10 +241,9 @@ class ConvertJob(unittest.TestCase):
             models.ConvertJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(
-                string="The download action accepts only these parameter: dataset_id, format",
-                code='invalid')]
-        )
+            [ErrorDetail(string="The download action accepts only these parameter: "
+                                "dataset_id, format, bounding_box",
+                         code='invalid')])
 
     def test_check_parameters_wrong_type_for_dataset_id(self):
         """
@@ -281,21 +276,6 @@ class JobViewSetTests(django.test.TestCase):
     """Test jobs/ endpoints"""
 
     fixtures = ['processing_tests_data']
-
-    def setUp(self):
-        # This mock is necessary to avoid disabling the TaskViewSet when tests are run in an
-        # environment where geospaas_processing is not installed.
-        mock.patch('geospaas_rest_api.models.tasks').start()
-        self.addCleanup(mock.patch.stopall)
-
-    def test_jobs_inaccessible_if_geospaas_processing_not_importable(self):
-        """
-        If geospaas_processing is not importable, the 'jobs/' endpoint should not be accessible
-        """
-        with mock.patch('geospaas_rest_api.models.tasks', None):
-            self.assertEqual(self.client.get('/api/jobs/').status_code, 404)
-            self.assertEqual(self.client.post('/api/jobs/', {}).status_code, 404)
-            self.assertEqual(self.client.get('/api/jobs/1234').status_code, 404)
 
     def test_launch_job_if_valid_request_data(self):
         """A task must only be launched if the request data was successfully validated"""
@@ -337,7 +317,7 @@ class JobViewSetTests(django.test.TestCase):
             ]
         }
         with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
-            mock_result = mock.Mock()
+            mock_result = mock.Mock(spec=celery.result.AsyncResult)
             mock_result.state = 'PLACEHOLDER'
             mock_get_result.return_value = (mock_result, False)
             self.assertJSONEqual(self.client.get('/api/jobs/').content, expected_result)
@@ -351,7 +331,7 @@ class JobViewSetTests(django.test.TestCase):
             "date_created": '2020-07-16T13:53:30Z',
         }
         with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
-            mock_result = mock.Mock()
+            mock_result = mock.Mock(spec=celery.result.AsyncResult)
             mock_result.state = 'PLACEHOLDER'
             mock_get_result.return_value = (mock_result, False)
             response = self.client.get('/api/jobs/1/')
@@ -368,7 +348,7 @@ class JobViewSetTests(django.test.TestCase):
             "date_done": 'bar'
         }
         with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
-            mock_result = mock.Mock()
+            mock_result = mock.Mock(spec=celery.result.AsyncResult)
             mock_result.state = 'SUCCESS'
             mock_result.result = [1, 'foo']
             mock_result.date_done = 'bar'
@@ -381,11 +361,6 @@ class JobSerializerTests(django.test.TestCase):
     """Tests for the JobSerializer"""
 
     fixtures = ['processing_tests_data']
-
-    def setUp(self):
-        tasks_patcher = mock.patch('geospaas_rest_api.models.tasks')
-        self.tasks_mock = tasks_patcher.start()
-        self.addCleanup(mock.patch.stopall)
 
     def test_validation_return_value(self):
         """Test tha the validate() method returns the validated data"""
@@ -447,12 +422,12 @@ class JobSerializerTests(django.test.TestCase):
             'action': 'download', 'parameters': {'dataset_id': 1}
         }
         serializer = serializers.JobSerializer()
-        with mock.patch.object(models.DownloadJob, 'signature') as mock_signature:
-            mock_signature.delay.return_value.task_id = 1
+        with mock.patch.object(models.DownloadJob, 'get_signature') as mock_get_signature, \
+             mock.patch('geospaas_rest_api.models.isinstance', return_value=True):
+            mock_get_signature.return_value.delay.return_value.task_id = 1
             serializer.create(validated_data)
-            mock_signature.delay.assert_called_with(
-                (validated_data['parameters']['dataset_id'],)
-            )
+            mock_get_signature.return_value.delay.assert_called_with(
+                (validated_data['parameters']['dataset_id'],))
 
     def test_launch_idf_conversion(self):
         """The convert_to_idf task must be called with the right parameters"""
@@ -460,10 +435,12 @@ class JobSerializerTests(django.test.TestCase):
             'action': 'convert', 'parameters': {'dataset_id': 1, 'format': 'idf'}
         }
         serializer = serializers.JobSerializer()
-        with mock.patch.object(models.ConvertJob, 'signature') as mock_signature:
-            mock_signature.delay.return_value.task_id = 1
+        with mock.patch.object(models.IDFConvertJob, 'get_signature') as mock_get_signature, \
+             mock.patch('geospaas_rest_api.models.isinstance', return_value=True):
+            mock_get_signature.return_value.delay.return_value.task_id = 1
             serializer.create(validated_data)
-            mock_signature.delay.assert_called_with((validated_data['parameters']['dataset_id'],))
+            mock_get_signature.return_value.delay.assert_called_with(
+                (validated_data['parameters']['dataset_id'],))
 
     def test_unfinished_job_representation(self):
         """
@@ -475,7 +452,7 @@ class JobSerializerTests(django.test.TestCase):
           - date_created
         """
         with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
-            mock_result = mock.Mock()
+            mock_result = mock.Mock(spec=celery.result.AsyncResult)
             mock_result.state = 'PLACEHOLDER'
             mock_get_result.return_value = (mock_result, False)
             self.assertDictEqual(
@@ -507,7 +484,7 @@ class JobSerializerTests(django.test.TestCase):
             "date_done": 'PLACEHOLDER'
         }
         with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
-            mock_result = mock.Mock()
+            mock_result = mock.Mock(spec=celery.result.AsyncResult)
             mock_result.state = 'PLACEHOLDER'
             mock_result.date_done = 'PLACEHOLDER'
             mock_result.result = 'PLACEHOLDER'
