@@ -240,7 +240,7 @@ class SyntoolConvertJob(ConvertJob):
 
     @classmethod
     def get_signature(cls, parameters):
-        return (
+        return celery.chain(
             tasks_syntool.check_ingested.signature(),
             tasks_core.download.signature(),
             tasks_core.unarchive.signature(),
@@ -248,8 +248,7 @@ class SyntoolConvertJob(ConvertJob):
                 kwargs={'bounding_box': parameters.get('bounding_box', None)}),
             tasks_syntool.convert.signature(),
             tasks_syntool.db_insert.signature(),
-            tasks_core.remove_downloaded.signature()
-        )
+            tasks_core.remove_downloaded.signature())
 
 
 @requires(tasks_syntool)
