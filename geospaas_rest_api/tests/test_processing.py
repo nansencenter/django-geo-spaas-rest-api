@@ -409,6 +409,45 @@ class SyntoolCleanupJobTests(unittest.TestCase):
             ((datetime(2020, 2, 1),), {'created': True}))
 
 
+class HarvestJobTests(unittest.TestCase):
+    """Tests for the HarvestJob class"""
+
+    def test_get_signature(self):
+        """Test getting the right signature"""
+        with mock.patch('geospaas_rest_api.models.tasks_harvesting') as mock_harvesting_tasks:
+            self.assertEqual(
+                models.HarvestJob.get_signature({}),
+                mock_harvesting_tasks.start_harvest.signature.return_value)
+
+    def test_check_parameters_ok(self):
+        """Test that check_parameters() returns the parameters when
+        they are valid"""
+        self.assertDictEqual(
+            models.HarvestJob.check_parameters({'search_config_dict': {}}),
+            {'search_config_dict': {}})
+
+    def test_check_parameters_unknown(self):
+        """An error should be raised when an unknown parameter is given
+        """
+        with self.assertRaises(models.ValidationError):
+            models.HarvestJob.check_parameters({'foo': 'bar'})
+
+    def test_check_parameters_wrong_type(self):
+        """An error should be raised when `search_config_dict` is not a
+        dict
+        """
+        with self.assertRaises(models.ValidationError):
+            models.HarvestJob.check_parameters({'search_config_dict': 'foo'})
+
+    def test_make_task_parameters(self):
+        """Test that the right arguments are builts from the request
+        parameters
+        """
+        self.assertTupleEqual(
+            models.HarvestJob.make_task_parameters({'search_config_dict': {'foo': 'bar'}}),
+            (({'foo': 'bar'},), {}))
+
+
 class JobViewSetTests(django.test.TestCase):
     """Test jobs/ endpoints"""
 
