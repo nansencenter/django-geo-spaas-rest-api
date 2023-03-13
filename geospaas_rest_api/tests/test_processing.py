@@ -2,6 +2,7 @@
 import os
 import unittest
 import unittest.mock as mock
+from datetime import datetime
 
 import celery
 import celery.result
@@ -355,6 +356,57 @@ class SyntoolConvertJobTests(unittest.TestCase):
         self.assertListEqual(
             mock_core_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
             [0, 20, 20, 0])
+
+
+class SyntoolCleanupJobTests(unittest.TestCase):
+    """Tests for the SyntoolCleanupJob class"""
+
+    def test_get_signature(self):
+        """Test getting the right signature"""
+        with mock.patch('geospaas_rest_api.models.tasks_syntool') as mock_syntool_tasks:
+            self.assertEqual(
+                models.SyntoolCleanupJob.get_signature({}),
+                mock_syntool_tasks.cleanup_ingested.signature.return_value)
+
+    def test_check_parameters_ok(self):
+        """Test that check_parameters() returns the parameters when
+        they are valid
+        """
+        self.assertDictEqual(
+            models.SyntoolCleanupJob.check_parameters({'date': '2020-02-01'}),
+            {'date': '2020-02-01'})
+
+    def test_check_parameters_unknown(self):
+        """An error should be raised when an unknown parameter is given
+        """
+        with self.assertRaises(models.ValidationError):
+            models.SyntoolCleanupJob.check_parameters({'foo': 'bar'})
+
+    def test_check_parameters_no_date(self):
+        """An error should be raised when no date is given
+        """
+        with self.assertRaises(models.ValidationError):
+            models.SyntoolCleanupJob.check_parameters({'created': True})
+
+    def test_check_parameters_bad_date(self):
+        """An error should be raised when an invalid date is given
+        """
+        with self.assertRaises(models.ValidationError):
+            models.SyntoolCleanupJob.check_parameters({'date': 'foo'})
+
+    def test_check_parameters_wrong_type(self):
+        """An error should be raised when `created` is not a boolean
+        """
+        with self.assertRaises(models.ValidationError):
+            models.SyntoolCleanupJob.check_parameters({'date': '2023-01-01', 'created': 'true'})
+
+    def test_make_task_parameters(self):
+        """Test that the right arguments are builts from the request
+        parameters
+        """
+        self.assertTupleEqual(
+            models.SyntoolCleanupJob.make_task_parameters({'date': '2020-02-01', 'created': True}),
+            ((datetime(2020, 2, 1),), {'created': True}))
 
 
 class JobViewSetTests(django.test.TestCase):
