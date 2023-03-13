@@ -312,6 +312,51 @@ class ConvertJobTests(unittest.TestCase):
             models.ConvertJob.check_parameters({'dataset_id': 1, 'bounding_box': [2]})
 
 
+class IDFConvertJobTests(unittest.TestCase):
+    """Tests for the IDFConvertJob class"""
+
+    def test_get_signature(self):
+        """Test the right signature is returned"""
+        with mock.patch('geospaas_rest_api.models.tasks_core') as mock_core_tasks, \
+             mock.patch('geospaas_rest_api.models.tasks_idf') as mock_idf_tasks, \
+             mock.patch('celery.chain') as mock_chain:
+            _ = models.IDFConvertJob.get_signature({'bounding_box': [0, 20, 20, 0]})
+        mock_chain.assert_called_with(
+            mock_core_tasks.download.signature.return_value,
+            mock_core_tasks.unarchive.signature.return_value,
+            mock_core_tasks.crop.signature.return_value,
+            mock_idf_tasks.convert_to_idf.signature.return_value,
+            mock_core_tasks.archive.signature.return_value,
+            mock_core_tasks.publish.signature.return_value,
+        )
+        self.assertListEqual(
+            mock_core_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
+            [0, 20, 20, 0])
+
+
+class SyntoolConvertJobTests(unittest.TestCase):
+    """Tests for the SyntoolConvertJob class"""
+
+    def test_get_signature(self):
+        """Test the right signature is returned"""
+        with mock.patch('geospaas_rest_api.models.tasks_core') as mock_core_tasks, \
+             mock.patch('geospaas_rest_api.models.tasks_syntool') as mock_syntool_tasks, \
+             mock.patch('celery.chain') as mock_chain:
+            _ = models.SyntoolConvertJob.get_signature({'bounding_box': [0, 20, 20, 0]})
+        mock_chain.assert_called_with(
+            mock_syntool_tasks.check_ingested.signature.return_value,
+            mock_core_tasks.download.signature.return_value,
+            mock_core_tasks.unarchive.signature.return_value,
+            mock_core_tasks.crop.signature.return_value,
+            mock_syntool_tasks.convert.signature.return_value,
+            mock_syntool_tasks.db_insert.signature.return_value,
+            mock_core_tasks.remove_downloaded.signature.return_value,
+        )
+        self.assertListEqual(
+            mock_core_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
+            [0, 20, 20, 0])
+
+
 class JobViewSetTests(django.test.TestCase):
     """Test jobs/ endpoints"""
 
