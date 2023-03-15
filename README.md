@@ -24,7 +24,8 @@ This API provides endpoints to list the following objects stored in a GeoSPaaS d
   - dataset_relationships
   - datacenters
 
-If GeoSPaaS processing is available, the following endpoints are also provided:
+If [GeoSPaaS processing](https://github.com/nansencenter/django-geo-spaas-processing) is available,
+the following endpoints are also provided:
   - tasks
   - jobs
 
