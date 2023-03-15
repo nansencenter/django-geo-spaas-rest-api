@@ -11,6 +11,7 @@ RUN apt update && \
     django-filter \
     djangorestframework \
     djangorestframework-filters==1.0.0dev2 \
+    'importlib-metadata==4.*' \
     markdown
 
 WORKDIR /src
