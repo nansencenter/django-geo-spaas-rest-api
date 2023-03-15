@@ -174,6 +174,31 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
     class Meta:
         proxy = True
 
+    @classmethod
+    def get_signature(cls, parameters):
+        format = parameters['format']
+        if format == 'idf':
+            return celery.chain(
+                tasks_core.download.signature(),
+                tasks_core.unarchive.signature(),
+                tasks_core.crop.signature(
+                    kwargs={'bounding_box': parameters.get('bounding_box', None)}),
+                tasks_idf.convert_to_idf.signature(),
+                tasks_core.archive.signature(),
+                tasks_core.publish.signature())
+        elif format == 'syntool':
+            return celery.chain(
+                tasks_syntool.check_ingested.signature(),
+                tasks_core.download.signature(),
+                tasks_core.unarchive.signature(),
+                tasks_core.crop.signature(
+                    kwargs={'bounding_box': parameters.get('bounding_box', None)}),
+                tasks_syntool.convert.signature(),
+                tasks_syntool.db_insert.signature(),
+                tasks_core.remove_downloaded.signature())
+        else:
+            raise RuntimeError(f"Unknown format {format}")
+
     @staticmethod
     def check_parameters(parameters):
         """Checks that the following parameters are present with
@@ -190,7 +215,7 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
         if not isinstance(parameters['dataset_id'], int):
             raise ValidationError("'dataset_id' must be an integer")
 
-        accepted_formats = ('idf',)
+        accepted_formats = ('idf', 'syntool')
         if not parameters['format'] in accepted_formats:
             raise ValidationError(
                 f"'format' only accepts the following values: {', '.join(accepted_formats)}")
@@ -206,49 +231,6 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
     @staticmethod
     def make_task_parameters(parameters):
         return (((parameters['dataset_id'],),), {})
-
-
-@requires(tasks_core, tasks_idf)
-class IDFConvertJob(ConvertJob):
-    """Job which:
-      - downloads a dataset
-      - converts it into the given format
-      - archives the result if necessary
-      - publishes the result to an FTP server
-    """
-    class Meta:
-        proxy = True
-
-    @classmethod
-    def get_signature(cls, parameters):
-        return celery.chain(
-            tasks_core.download.signature(),
-            tasks_core.unarchive.signature(),
-            tasks_core.crop.signature(
-                kwargs={'bounding_box': parameters.get('bounding_box', None)}),
-            tasks_idf.convert_to_idf.signature(),
-            tasks_core.archive.signature(),
-            tasks_core.publish.signature())
-
-
-@requires(tasks_core, tasks_syntool)
-class SyntoolConvertJob(ConvertJob):
-    """Job which converts a dataset into Syntool-displayable data
-    """
-    class Meta:
-        proxy = True
-
-    @classmethod
-    def get_signature(cls, parameters):
-        return celery.chain(
-            tasks_syntool.check_ingested.signature(),
-            tasks_core.download.signature(),
-            tasks_core.unarchive.signature(),
-            tasks_core.crop.signature(
-                kwargs={'bounding_box': parameters.get('bounding_box', None)}),
-            tasks_syntool.convert.signature(),
-            tasks_syntool.db_insert.signature(),
-            tasks_core.remove_downloaded.signature())
 
 
 @requires(tasks_syntool)

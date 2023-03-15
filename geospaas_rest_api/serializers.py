@@ -13,6 +13,13 @@ import geospaas_rest_api.models as models
 class JobSerializer(rest_framework.serializers.Serializer):
     """Serializer for Job objects"""
 
+    jobs = {
+        'download': models.DownloadJob,
+        'convert': models.ConvertJob,
+        'harvest': models.HarvestJob,
+        'syntool_cleanup': models.SyntoolCleanupJob,
+    }
+
     # Actual Job fields
     id = rest_framework.serializers.IntegerField(read_only=True)
     task_id = rest_framework.serializers.CharField(read_only=True)
@@ -56,21 +63,11 @@ class JobSerializer(rest_framework.serializers.Serializer):
     def update(self, instance, validated_data):
         """Does nothing. Update of already created tasks is only done by the Celery worker"""
 
-    def choose_job_class(self, data):
+    @classmethod
+    def choose_job_class(cls, data):
         """Return the right job class based on the request data
         """
-        if data['action'] == 'download':
-            job_class = models.DownloadJob
-        elif data['action'] == 'convert':
-            if data['parameters']['format'] == 'idf':
-                job_class = models.IDFConvertJob
-            elif data['parameters']['format'] == 'syntool':
-                job_class = models.SyntoolConvertJob
-        elif data['action'] == 'harvest':
-            job_class = models.HarvestJob
-        elif data['action'] == 'syntool_cleanup':
-            job_class = models.SyntoolCleanupJob
-        return job_class
+        return cls.jobs[data['action']]
 
     def create(self, validated_data):
         """Launches a long-running task, and returns the corresponding AsyncResult"""
