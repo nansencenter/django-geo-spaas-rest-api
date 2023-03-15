@@ -148,7 +148,8 @@ class DownloadJob(Job):
     def check_parameters(parameters):
         """
         Checks that the following parameters are present with correct values:
-          - dataset_id: integer
+            - dataset_id: integer
+            - bounding_box: 4-elements list
         """
         if not set(parameters).issubset(set(('dataset_id', 'bounding_box'))):
             raise ValidationError("The download action accepts only one parameter: 'dataset_id'")
@@ -175,10 +176,11 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
 
     @staticmethod
     def check_parameters(parameters):
-        """
-        Checks that the following parameters are present with correct values:
-          - dataset_id: integer
-          - format: value in ['idf']
+        """Checks that the following parameters are present with
+        correct values:
+            - dataset_id: integer
+            - bounding_box: 4-elements list
+            - format: value in ['idf']
         """
         accepted_keys = ('dataset_id', 'format', 'bounding_box')
         if not set(parameters).issubset(set(accepted_keys)):
