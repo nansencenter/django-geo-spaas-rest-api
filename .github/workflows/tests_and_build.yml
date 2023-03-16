@@ -70,7 +70,6 @@ jobs:
              "${TESTING_IMAGE_NAME}"
              bash -c "coverage run --source=./geospaas_rest_api
              --omit='geospaas_rest_api/tests/*'
-             --omit='geospaas_rest_api/v1/*'
              runtests.py"
 
       - name: 'Install Python 3.7'
