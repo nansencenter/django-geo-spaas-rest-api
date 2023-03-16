@@ -210,7 +210,7 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
         accepted_keys = ('dataset_id', 'format', 'bounding_box')
         if not set(parameters).issubset(set(accepted_keys)):
             raise ValidationError(
-                f"The download action accepts only these parameter: {', '.join(accepted_keys)}")
+                f"The download action accepts only these parameters: {', '.join(accepted_keys)}")
 
         if not isinstance(parameters['dataset_id'], int):
             raise ValidationError("'dataset_id' must be an integer")
@@ -248,7 +248,7 @@ class SyntoolCleanupJob(Job):
         accepted_keys = ('date', 'created')
         if not set(parameters).issubset(accepted_keys):
             raise ValidationError(
-                "The syntool cleanup action accepts only these parameter: " +
+                "The syntool cleanup action accepts only these parameters: " +
                 str({', '.join(accepted_keys)}))
 
         try:
