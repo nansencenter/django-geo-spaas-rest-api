@@ -7,7 +7,7 @@ ARG METANORM_VERSION=4.1.1
 
 # Install Django-rest-framework
 RUN apt update && \
-    apt install -y git && \
+    apt install -y git nco && \
     apt clean && rm -rf /var/lib/apt/lists/* && \
     pip install --upgrade --no-cache-dir \
     'celery==5.2.*' \
