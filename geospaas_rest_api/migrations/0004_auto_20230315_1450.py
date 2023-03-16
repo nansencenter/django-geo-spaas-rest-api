@@ -10,10 +10,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='convertjob',
-            name='job_ptr',
-        ),
         migrations.DeleteModel(
             name='IDFConvertJob',
         ),
