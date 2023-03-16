@@ -33,16 +33,6 @@ class JobViewSet(rest_framework.mixins.CreateModelMixin,
     serializer_class = serializers.JobSerializer
     pagination_class = IdOrderedCursorPagination
 
-    def __init__(self, **kwargs):
-        """
-        Check for geospaas_processing.tasks availability before allowing to instantiate the viewset.
-        Return a 404 error to the client if it is not. This basically disables the tasks endpoint if
-        geospaas_processing is not installed.
-        """
-        if not models.tasks:
-            raise django.http.Http404()
-        super().__init__(**kwargs)
-
 
 class TaskViewSet(ReadOnlyModelViewSet):
     """API endpoint to manage long running tasks"""

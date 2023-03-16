@@ -24,7 +24,8 @@ This API provides endpoints to list the following objects stored in a GeoSPaaS d
   - dataset_relationships
   - datacenters
 
-If GeoSPaaS processing is available, the following endpoints are also provided:
+If [GeoSPaaS processing](https://github.com/nansencenter/django-geo-spaas-processing) is available,
+the following endpoints are also provided:
   - tasks
   - jobs
 
@@ -406,12 +407,16 @@ Payload:
 ```json
 {
     "action": "download",
-    "parameters": {"dataset_id": <dataset_id>}
+    "parameters": {"dataset_id": <dataset_id>, "bounding_box": <bounding_box>}
 }
 ```
 
-Where `<dataset_id>` (integer) is the ID of the dataset to download.
-It can be obtained using the search capabilities of the `/datasets/` endpoint.
+Where :
+- `<dataset_id>` (integer) is the ID of the dataset to download.
+  It can be obtained using the search capabilities of the `/datasets/` endpoint.
+- `<bounding_box>` (4-elements list of floats):containing the limits used to crop the dataset file
+  after it has been downloaded.
+  The limits are given in the following order: west, north, east, south.
 
 Once the job is over, its **"result"** is set with a two-elements list.
   - the first element is the ID of the dataset that was downloaded
@@ -430,6 +435,7 @@ Payload:
     "parameters": {
       "format": "<format>",
       "dataset_id": <dataset_id>,
+      "bounding_box": <bounding_box>
     }
 }
 ```
@@ -437,11 +443,57 @@ Payload:
 Where:
   - `<format>` (string) is the target format.
   - `<dataset_id>` (integer) is the ID of the dataset to download.
+  - `<bounding_box>` (4-elements list of floats):containing the limits used to crop the dataset file
+  after it has been downloaded.
+  The limits are given in the following order: west, north, east, south.
 
 Available formats:
   - "idf"
+  - "syntool"
 
 Once the job is over, its **"result"** is set with a two-elements list.
   - the first element is the ID of the dataset that was converted
     (this enables to easily chain tasks together)
   - the second element is the link where the converted file can be retrieved.
+
+##### `syntool_cleanup`
+
+Removes ingested files older than a given date.
+
+Payload:
+
+```json
+{
+    "action": "syntool_cleanup",
+    "parameters": {
+      "date": "<date>",
+      "created": <created>
+    }
+}
+```
+
+Where:
+- `<date>` (string): the limit date. The format should be readable by
+  [datetutil](https://dateutil.readthedocs.io/en/stable/).
+- `created` (boolean, default `false`): if `true`, files ingested before the date are removed.
+  If `false`, files whose dataset's time coverage ends before the date are removed.
+
+##### `harvest`
+
+Trigger metadata harvesting using
+[geospaas_harvesting](https://github.com/nansencenter/django-geo-spaas-harvesting).
+
+Payload:
+
+```json
+{
+    "action": "harvest",
+    "parameters": {
+      "search_config_dict": <search_config_dict>
+    }
+}
+```
+
+Where `<search_config_dict>` is a search configuration dictionary for `geospaas_harvesting`.
+The format is explained
+[here](https://github.com/nansencenter/django-geo-spaas-harvesting#search-configuration).

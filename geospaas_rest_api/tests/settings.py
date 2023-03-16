@@ -31,6 +31,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'rest_framework_filters',
+    'geospaas_processing',
+    'geospaas_harvesting',
 ]
 
 MIDDLEWARE = [
@@ -51,6 +53,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.request',
             ],
         },
     },
@@ -78,6 +81,8 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
 "/project/static",
 ]
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (

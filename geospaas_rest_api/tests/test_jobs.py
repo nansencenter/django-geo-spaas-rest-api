@@ -1,7 +1,9 @@
 """Tests for the long-running tasks endpoint of the GeoSPaaS REST API"""
+import importlib
 import os
 import unittest
 import unittest.mock as mock
+from datetime import datetime
 
 import celery
 import celery.result
@@ -117,37 +119,36 @@ class JobModelTests(django.test.TestCase):
 
     fixtures = ['processing_tests_data']
 
-    def setUp(self):
-        # This mock is necessary to avoid disabling the TaskViewSet when tests are run in an
-        # environment where geospaas_processing is not installed.
-        mock.patch('geospaas_rest_api.models.tasks').start()
-        self.addCleanup(mock.patch.stopall)
-
-    def test_error_on_check_parameters_execution(self):
+    def test_abstract_check_parameters(self):
         """
         Any attempt to access the signature attribute on the
         `Job` class should raise a NotImplementedError
         """
         with self.assertRaises(NotImplementedError):
-            models.Job.check_parameters(None)
+            models.Job.check_parameters({})
+
+    def test_abstract_get_signature(self):
+        """get_signature() should raise a NotImplementedError"""
+        with self.assertRaises(NotImplementedError):
+            models.Job.get_signature({})
+
+    def test_abstract_make_task_parameters(self):
+        """make_task_parameters() should raise a NotImplementedError"""
+        with self.assertRaises(NotImplementedError):
+            models.Job.make_task_parameters({})
 
     def test_run_job(self):
         """
         `Job.run()` must launch the celery tasks and
         return a job instance pointing to the first task
         """
-        with mock.patch.object(models.Job, 'signature') as mock_signature:
-            mock_signature.delay.return_value.task_id = 1
-            job = models.Job.run('foo')
-        mock_signature.delay.assert_called_with('foo')
+        with mock.patch.object(models.Job, 'get_signature') as mock_get_signature, \
+             mock.patch.object(models.Job, 'make_task_parameters') as mock_make_params:
+            mock_get_signature.return_value.delay.return_value.task_id = 1
+            mock_make_params.side_effect = lambda p: ([], p)
+            job = models.Job.run({'foo': 'bar'})
+        mock_get_signature.return_value.delay.assert_called_with(foo='bar')
         self.assertIsInstance(job, models.Job)
-
-    def test_run_job_error_if_tasks_not_importable(self):
-        """`Job.run()` must raise an exception if `geospaas_processing.tasks` is not importable"""
-        with mock.patch('geospaas_rest_api.models.tasks', None):
-            with mock.patch.object(models.Job, 'signature'):
-                with self.assertRaises(ImportError):
-                    models.Job.run()
 
     def test_get_current_task_result(self):
         """
@@ -177,6 +178,37 @@ class JobModelTests(django.test.TestCase):
 class DownloadJobTests(unittest.TestCase):
     """Tests for the DownloadJob class"""
 
+    def test_get_signature_no_cropping(self):
+        """Test getting the right signature when no cropping is
+        required
+        """
+        with mock.patch('geospaas_rest_api.models.processing_jobs.tasks_core') as mock_tasks, \
+             mock.patch('celery.chain') as mock_chain:
+            _ = models.DownloadJob.get_signature({})
+        mock_chain.assert_called_with([
+            mock_tasks.download.signature.return_value,
+            mock_tasks.archive.signature.return_value,
+            mock_tasks.publish.signature.return_value,
+        ])
+
+    def test_get_signature_cropping(self):
+        """Test getting the right signature when cropping is required
+        """
+        with mock.patch('geospaas_rest_api.models.processing_jobs.tasks_core') as mock_tasks, \
+             mock.patch('celery.chain') as mock_chain:
+            _ = models.DownloadJob.get_signature({'bounding_box': [0, 20, 20, 0]})
+        mock_chain.assert_called_with(
+            [
+                mock_tasks.download.signature.return_value,
+                mock_tasks.unarchive.signature.return_value,
+                mock_tasks.crop.signature.return_value,
+                mock_tasks.archive.signature.return_value,
+                mock_tasks.publish.signature.return_value,
+            ])
+        self.assertListEqual(
+            mock_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
+            [0, 20, 20, 0])
+
     def test_check_parameters_ok(self):
         """Test the checking of correct parameters"""
         parameters = {'dataset_id': 1}
@@ -190,8 +222,7 @@ class DownloadJobTests(unittest.TestCase):
         self.assertListEqual(
             raised.exception.detail,
             [ErrorDetail(string="The download action accepts only one parameter: 'dataset_id'",
-                         code='invalid')]
-        )
+                         code='invalid')])
 
     def test_check_parameters_extra_param(self):
         """`check_parameters()` must raise an exception if an extra parameter is given"""
@@ -201,24 +232,29 @@ class DownloadJobTests(unittest.TestCase):
         self.assertListEqual(
             raised.exception.detail,
             [ErrorDetail(string="The download action accepts only one parameter: 'dataset_id'",
-                         code='invalid')]
-        )
+                         code='invalid')])
 
-    def test_check_parameters_wrong_type(self):
+    def test_check_parameters_wrong_id_type(self):
+        """`check_parameters()` must raise an exception if the
+        'dataset_id' value is of the wrong type
         """
-        `check_parameters()` must raise an exception if
-        the 'dataset_id' value is of the wrong type
-        """
-        parameters = {'dataset_id': '1'}
         with self.assertRaises(ValidationError) as raised:
-            models.DownloadJob.check_parameters(parameters)
+            models.DownloadJob.check_parameters({'dataset_id': '1'})
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(string="'dataset_id' must be an integer", code='invalid')]
-        )
+            [ErrorDetail(string="'dataset_id' must be an integer", code='invalid')])
+
+    def test_check_parameters_wrong_bounding_box_type(self):
+        """`check_parameters()` must raise an exception if the
+        'bounding_box' value is of the wrong type or length
+        """
+        with self.assertRaises(ValidationError):
+            models.DownloadJob.check_parameters({'dataset_id': 1, 'bounding_box': '2'})
+        with self.assertRaises(ValidationError):
+            models.DownloadJob.check_parameters({'dataset_id': 1, 'bounding_box': [2]})
 
 
-class ConvertJob(unittest.TestCase):
+class ConvertJobTests(unittest.TestCase):
     """Tests for the ConvertJob class"""
 
     def test_check_parameters_ok(self):
@@ -228,74 +264,206 @@ class ConvertJob(unittest.TestCase):
 
     def test_check_parameters_wrong_key(self):
         """`check_parameters()` must raise an exception if there is a wrong key in the parameters"""
-        parameters = {'wrong_key': 1, 'format': 'idf'}
+        parameters = {'dataset_id': 1, 'format': 'idf', 'wrong_key': 1}
         with self.assertRaises(ValidationError) as raised:
             models.ConvertJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(
-                string="The download action accepts only these parameter: dataset_id, format",
-                code='invalid')]
-        )
+            [ErrorDetail(string="The download action accepts only these parameters: "
+                                "dataset_id, format, bounding_box",
+                         code='invalid')])
+
+    def test_check_parameters_wrong_format(self):
+        """`check_parameters()` must raise an exception if the format
+        is not one of the valid options
+        """
+        parameters = {'dataset_id': 1, 'format': 'foo',}
+        with self.assertRaises(ValidationError) as raised:
+            models.ConvertJob.check_parameters(parameters)
 
     def test_check_parameters_extra_param(self):
         """`check_parameters()` must raise an exception if an extra parameter is given"""
-        parameters = {'dataset_id': 1, 'format': 'idf', 'extra_param': 'foo'}
+        parameters = {'dataset_id': 1, 'extra_param': 'foo'}
         with self.assertRaises(ValidationError) as raised:
             models.ConvertJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(
-                string="The download action accepts only these parameter: dataset_id, format",
-                code='invalid')]
-        )
+            [ErrorDetail(string="The download action accepts only these parameters: "
+                                "dataset_id, format, bounding_box",
+                         code='invalid')])
 
     def test_check_parameters_wrong_type_for_dataset_id(self):
         """
         `check_parameters()` must raise an exception if
         the 'dataset_id' value is of the wrong type
         """
-        parameters = {'dataset_id': '1', 'format': 'idf'}
+        parameters = {'dataset_id': '1'}
         with self.assertRaises(ValidationError) as raised:
             models.ConvertJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(string="'dataset_id' must be an integer", code='invalid')]
-        )
+            [ErrorDetail(string="'dataset_id' must be an integer", code='invalid')])
 
-    def test_check_parameters_wrong_value_for_format(self):
+    def test_check_parameters_wrong_bounding_box_type(self):
+        """`check_parameters()` must raise an exception if the
+        'bounding_box' value is of the wrong type or length
         """
-        `check_parameters()` must raise an exception if
-        the 'dataset_id' value is of the wrong type
-        """
-        parameters = {'dataset_id': 1, 'format': 'nc'}
-        with self.assertRaises(ValidationError) as raised:
-            models.ConvertJob.check_parameters(parameters)
-        self.assertListEqual(
-            raised.exception.detail,
-            [ErrorDetail(string="'format' only accepts the following values: idf", code='invalid')]
+        with self.assertRaises(ValidationError):
+            models.ConvertJob.check_parameters(
+                {'dataset_id': 1, 'format': 'idf', 'bounding_box': '2'})
+        with self.assertRaises(ValidationError):
+            models.ConvertJob.check_parameters(
+                {'dataset_id': 1, 'format': 'idf', 'bounding_box': [2]})
+
+    def test_get_signature_syntool(self):
+        """Test the right signature is returned"""
+        with mock.patch('geospaas_rest_api.models.processing_jobs.tasks_core') as mock_core_tasks, \
+             mock.patch(
+                'geospaas_rest_api.models.processing_jobs.tasks_syntool') as mock_syntool_tasks, \
+             mock.patch('celery.chain') as mock_chain:
+            _ = models.ConvertJob.get_signature({
+                'format': 'syntool',
+                'bounding_box': [0, 20, 20, 0]
+            })
+        mock_chain.assert_called_with(
+            mock_syntool_tasks.check_ingested.signature.return_value,
+            mock_core_tasks.download.signature.return_value,
+            mock_core_tasks.unarchive.signature.return_value,
+            mock_core_tasks.crop.signature.return_value,
+            mock_syntool_tasks.convert.signature.return_value,
+            mock_syntool_tasks.db_insert.signature.return_value,
+            mock_core_tasks.remove_downloaded.signature.return_value,
         )
+        self.assertListEqual(
+            mock_core_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
+            [0, 20, 20, 0])
+
+    def test_get_signature_idf(self):
+        """Test the right signature is returned"""
+        with mock.patch('geospaas_rest_api.models.processing_jobs.tasks_core') as mock_core_tasks, \
+             mock.patch('geospaas_rest_api.models.processing_jobs.tasks_idf') as mock_idf_tasks, \
+             mock.patch('celery.chain') as mock_chain:
+            _ = models.ConvertJob.get_signature({
+                'format': 'idf',
+                'bounding_box': [0, 20, 20, 0]
+            })
+        mock_chain.assert_called_with(
+            mock_core_tasks.download.signature.return_value,
+            mock_core_tasks.unarchive.signature.return_value,
+            mock_core_tasks.crop.signature.return_value,
+            mock_idf_tasks.convert_to_idf.signature.return_value,
+            mock_core_tasks.archive.signature.return_value,
+            mock_core_tasks.publish.signature.return_value,
+        )
+        self.assertListEqual(
+            mock_core_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
+            [0, 20, 20, 0])
+
+    def test_get_signature_wrong_format(self):
+        """An exception should be raised when trying to get a signature
+        using an invalid format. This should never happen since
+        parameters are checked before
+        """
+        with self.assertRaises(RuntimeError):
+            _ = models.ConvertJob.get_signature({'format': 'foo'})
+
+
+class SyntoolCleanupJobTests(unittest.TestCase):
+    """Tests for the SyntoolCleanupJob class"""
+
+    def test_get_signature(self):
+        """Test getting the right signature"""
+        with mock.patch(
+                'geospaas_rest_api.models.processing_jobs.tasks_syntool') as mock_syntool_tasks:
+            self.assertEqual(
+                models.SyntoolCleanupJob.get_signature({}),
+                mock_syntool_tasks.cleanup_ingested.signature.return_value)
+
+    def test_check_parameters_ok(self):
+        """Test that check_parameters() returns the parameters when
+        they are valid
+        """
+        self.assertDictEqual(
+            models.SyntoolCleanupJob.check_parameters({'date': '2020-02-01'}),
+            {'date': '2020-02-01'})
+
+    def test_check_parameters_unknown(self):
+        """An error should be raised when an unknown parameter is given
+        """
+        with self.assertRaises(ValidationError):
+            models.SyntoolCleanupJob.check_parameters({'foo': 'bar'})
+
+    def test_check_parameters_no_date(self):
+        """An error should be raised when no date is given
+        """
+        with self.assertRaises(ValidationError):
+            models.SyntoolCleanupJob.check_parameters({'created': True})
+
+    def test_check_parameters_bad_date(self):
+        """An error should be raised when an invalid date is given
+        """
+        with self.assertRaises(ValidationError):
+            models.SyntoolCleanupJob.check_parameters({'date': 'foo'})
+
+    def test_check_parameters_wrong_type(self):
+        """An error should be raised when `created` is not a boolean
+        """
+        with self.assertRaises(ValidationError):
+            models.SyntoolCleanupJob.check_parameters({'date': '2023-01-01', 'created': 'true'})
+
+    def test_make_task_parameters(self):
+        """Test that the right arguments are builts from the request
+        parameters
+        """
+        self.assertTupleEqual(
+            models.SyntoolCleanupJob.make_task_parameters({'date': '2020-02-01', 'created': True}),
+            ((datetime(2020, 2, 1),), {'created': True}))
+
+
+class HarvestJobTests(unittest.TestCase):
+    """Tests for the HarvestJob class"""
+
+    def test_get_signature(self):
+        """Test getting the right signature"""
+        with mock.patch(
+            'geospaas_rest_api.models.processing_jobs.tasks_harvesting') as mock_harvesting_tasks:
+            self.assertEqual(
+                models.HarvestJob.get_signature({}),
+                mock_harvesting_tasks.start_harvest.signature.return_value)
+
+    def test_check_parameters_ok(self):
+        """Test that check_parameters() returns the parameters when
+        they are valid"""
+        self.assertDictEqual(
+            models.HarvestJob.check_parameters({'search_config_dict': {}}),
+            {'search_config_dict': {}})
+
+    def test_check_parameters_unknown(self):
+        """An error should be raised when an unknown parameter is given
+        """
+        with self.assertRaises(ValidationError):
+            models.HarvestJob.check_parameters({'foo': 'bar'})
+
+    def test_check_parameters_wrong_type(self):
+        """An error should be raised when `search_config_dict` is not a
+        dict
+        """
+        with self.assertRaises(ValidationError):
+            models.HarvestJob.check_parameters({'search_config_dict': 'foo'})
+
+    def test_make_task_parameters(self):
+        """Test that the right arguments are builts from the request
+        parameters
+        """
+        self.assertTupleEqual(
+            models.HarvestJob.make_task_parameters({'search_config_dict': {'foo': 'bar'}}),
+            (({'foo': 'bar'},), {}))
 
 
 class JobViewSetTests(django.test.TestCase):
     """Test jobs/ endpoints"""
 
     fixtures = ['processing_tests_data']
-
-    def setUp(self):
-        # This mock is necessary to avoid disabling the TaskViewSet when tests are run in an
-        # environment where geospaas_processing is not installed.
-        mock.patch('geospaas_rest_api.models.tasks').start()
-        self.addCleanup(mock.patch.stopall)
-
-    def test_jobs_inaccessible_if_geospaas_processing_not_importable(self):
-        """
-        If geospaas_processing is not importable, the 'jobs/' endpoint should not be accessible
-        """
-        with mock.patch('geospaas_rest_api.models.tasks', None):
-            self.assertEqual(self.client.get('/api/jobs/').status_code, 404)
-            self.assertEqual(self.client.post('/api/jobs/', {}).status_code, 404)
-            self.assertEqual(self.client.get('/api/jobs/1234').status_code, 404)
 
     def test_launch_job_if_valid_request_data(self):
         """A task must only be launched if the request data was successfully validated"""
@@ -337,7 +505,7 @@ class JobViewSetTests(django.test.TestCase):
             ]
         }
         with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
-            mock_result = mock.Mock()
+            mock_result = mock.Mock(spec=celery.result.AsyncResult)
             mock_result.state = 'PLACEHOLDER'
             mock_get_result.return_value = (mock_result, False)
             self.assertJSONEqual(self.client.get('/api/jobs/').content, expected_result)
@@ -351,7 +519,7 @@ class JobViewSetTests(django.test.TestCase):
             "date_created": '2020-07-16T13:53:30Z',
         }
         with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
-            mock_result = mock.Mock()
+            mock_result = mock.Mock(spec=celery.result.AsyncResult)
             mock_result.state = 'PLACEHOLDER'
             mock_get_result.return_value = (mock_result, False)
             response = self.client.get('/api/jobs/1/')
@@ -368,7 +536,7 @@ class JobViewSetTests(django.test.TestCase):
             "date_done": 'bar'
         }
         with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
-            mock_result = mock.Mock()
+            mock_result = mock.Mock(spec=celery.result.AsyncResult)
             mock_result.state = 'SUCCESS'
             mock_result.result = [1, 'foo']
             mock_result.date_done = 'bar'
@@ -381,11 +549,6 @@ class JobSerializerTests(django.test.TestCase):
     """Tests for the JobSerializer"""
 
     fixtures = ['processing_tests_data']
-
-    def setUp(self):
-        tasks_patcher = mock.patch('geospaas_rest_api.models.tasks')
-        self.tasks_mock = tasks_patcher.start()
-        self.addCleanup(mock.patch.stopall)
 
     def test_validation_return_value(self):
         """Test tha the validate() method returns the validated data"""
@@ -447,12 +610,12 @@ class JobSerializerTests(django.test.TestCase):
             'action': 'download', 'parameters': {'dataset_id': 1}
         }
         serializer = serializers.JobSerializer()
-        with mock.patch.object(models.DownloadJob, 'signature') as mock_signature:
-            mock_signature.delay.return_value.task_id = 1
+        with mock.patch.object(models.DownloadJob, 'get_signature') as mock_get_signature, \
+             mock.patch('geospaas_rest_api.models.isinstance', return_value=True):
+            mock_get_signature.return_value.delay.return_value.task_id = 1
             serializer.create(validated_data)
-            mock_signature.delay.assert_called_with(
-                (validated_data['parameters']['dataset_id'],)
-            )
+            mock_get_signature.return_value.delay.assert_called_with(
+                (validated_data['parameters']['dataset_id'],))
 
     def test_launch_idf_conversion(self):
         """The convert_to_idf task must be called with the right parameters"""
@@ -460,10 +623,12 @@ class JobSerializerTests(django.test.TestCase):
             'action': 'convert', 'parameters': {'dataset_id': 1, 'format': 'idf'}
         }
         serializer = serializers.JobSerializer()
-        with mock.patch.object(models.ConvertJob, 'signature') as mock_signature:
-            mock_signature.delay.return_value.task_id = 1
+        with mock.patch.object(models.ConvertJob, 'get_signature') as mock_get_signature, \
+             mock.patch('geospaas_rest_api.models.isinstance', return_value=True):
+            mock_get_signature.return_value.delay.return_value.task_id = 1
             serializer.create(validated_data)
-            mock_signature.delay.assert_called_with((validated_data['parameters']['dataset_id'],))
+            mock_get_signature.return_value.delay.assert_called_with(
+                (validated_data['parameters']['dataset_id'],))
 
     def test_unfinished_job_representation(self):
         """
@@ -475,7 +640,7 @@ class JobSerializerTests(django.test.TestCase):
           - date_created
         """
         with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
-            mock_result = mock.Mock()
+            mock_result = mock.Mock(spec=celery.result.AsyncResult)
             mock_result.state = 'PLACEHOLDER'
             mock_get_result.return_value = (mock_result, False)
             self.assertDictEqual(
@@ -485,10 +650,31 @@ class JobSerializerTests(django.test.TestCase):
                     "task_id": "df2bfb58-7d2e-4f83-9dc2-bac95a421c72",
                     "status": 'PLACEHOLDER',
                     "date_created": '2020-07-16T13:53:30Z',
-                }
-            )
+                })
 
-    def test_finished_job_representation_no_success(self):
+    def test_unfinished_job_parallel_tasks_representation(self):
+        """The representation of a job which has not finished executing
+        and is running several tasks in parallel should have the state
+        of each task in its status property.
+        """
+        with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
+            mock_result = mock.MagicMock(spec=celery.result.ResultSet)
+            mock_result.__iter__.return_value = [mock.Mock(task_id='foo', state='PLACEHOLDER1'),
+                                                 mock.Mock(task_id='bar', state='PLACEHOLDER2')]
+            mock_get_result.return_value = (mock_result, False)
+            self.assertDictEqual(
+                serializers.JobSerializer().to_representation(models.Job.objects.get(id=1)),
+                {
+                    "id": 1,
+                    "task_id": "df2bfb58-7d2e-4f83-9dc2-bac95a421c72",
+                    "status": {
+                        'foo': 'PLACEHOLDER1',
+                        'bar': 'PLACEHOLDER2',
+                    },
+                    "date_created": '2020-07-16T13:53:30Z',
+                })
+
+    def test_finished_job_representation(self):
         """
         The representation of a job which has finished executing
         should have the following fields:
@@ -497,7 +683,7 @@ class JobSerializerTests(django.test.TestCase):
           - status
           - date_created
           - date_done
-          - result if the status is success
+          - result
         """
         expected_base_dict = {
             "id": 1,
@@ -507,7 +693,7 @@ class JobSerializerTests(django.test.TestCase):
             "date_done": 'PLACEHOLDER'
         }
         with mock.patch.object(models.Job, 'get_current_task_result') as mock_get_result:
-            mock_result = mock.Mock()
+            mock_result = mock.Mock(spec=celery.result.AsyncResult)
             mock_result.state = 'PLACEHOLDER'
             mock_result.date_done = 'PLACEHOLDER'
             mock_result.result = 'PLACEHOLDER'
@@ -521,5 +707,31 @@ class JobSerializerTests(django.test.TestCase):
             expected_base_dict['status'] = 'SUCCESS'
             self.assertDictEqual(
                 serializers.JobSerializer().to_representation(models.Job.objects.get(id=1)),
-                {**expected_base_dict, 'result': 'PLACEHOLDER'}
-            )
+                {**expected_base_dict, 'result': 'PLACEHOLDER'})
+
+            mock_result.state = 'FAILURE'
+            mock_result.traceback = 'error happened'
+            expected_base_dict['status'] = 'FAILURE'
+            self.assertDictEqual(
+                serializers.JobSerializer().to_representation(models.Job.objects.get(id=1)),
+                {**expected_base_dict, 'result': 'error happened'})
+
+    def test_choose_job_class(self):
+        """Test getting the right class based on the action parameter
+        """
+        serializer = serializers.JobSerializer()
+        self.assertEqual(
+            serializer.choose_job_class({'action': 'download', 'parameters': {}}),
+            models.DownloadJob)
+        self.assertEqual(
+            serializer.choose_job_class({'action': 'convert', 'parameters': {'format': 'idf'}}),
+            models.ConvertJob)
+        self.assertEqual(
+            serializer.choose_job_class({'action': 'convert', 'parameters': {'format': 'syntool'}}),
+            models.ConvertJob)
+        self.assertEqual(
+            serializer.choose_job_class({'action': 'harvest', 'parameters': {}}),
+            models.HarvestJob)
+        self.assertEqual(
+            serializer.choose_job_class({'action': 'syntool_cleanup'}),
+            models.SyntoolCleanupJob)

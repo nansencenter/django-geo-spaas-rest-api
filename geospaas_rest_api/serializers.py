@@ -1,6 +1,7 @@
 """
 Serializers for the GeoSPaaS REST API
 """
+import celery.result
 import django_celery_results.models
 import geospaas.catalog.models
 import geospaas.vocabularies.models
@@ -14,7 +15,9 @@ class JobSerializer(rest_framework.serializers.Serializer):
 
     jobs = {
         'download': models.DownloadJob,
-        'convert': models.ConvertJob
+        'convert': models.ConvertJob,
+        'harvest': models.HarvestJob,
+        'syntool_cleanup': models.SyntoolCleanupJob,
     }
 
     # Actual Job fields
@@ -23,9 +26,15 @@ class JobSerializer(rest_framework.serializers.Serializer):
     date_created = rest_framework.serializers.DateTimeField(read_only=True)
 
     # Fields used to launch jobs
-    action = rest_framework.serializers.ChoiceField(choices=list(jobs.keys()),
-                                                    required=True, write_only=True,
-                                                    help_text="Action to perform")
+    action = rest_framework.serializers.ChoiceField(
+        choices=[
+            'download',
+            'convert',
+            'harvest',
+            'syntool_cleanup'
+        ],
+        required=True, write_only=True,
+        help_text="Action to perform")
     parameters = rest_framework.serializers.DictField(write_only=True,
                                                       help_text="Parameters for the action")
 
@@ -34,7 +43,13 @@ class JobSerializer(rest_framework.serializers.Serializer):
         representation = super().to_representation(instance)
 
         current_result, finished = instance.get_current_task_result()
-        representation['status'] = current_result.state
+        if isinstance(current_result, celery.result.AsyncResult):
+            representation['status'] = current_result.state
+        elif isinstance(current_result, celery.result.ResultSet):
+            representation['status'] = {
+                r.task_id: r.state
+                for r in current_result
+            }
 
         if finished:
             representation['date_done'] = current_result.date_done
@@ -48,10 +63,16 @@ class JobSerializer(rest_framework.serializers.Serializer):
     def update(self, instance, validated_data):
         """Does nothing. Update of already created tasks is only done by the Celery worker"""
 
+    @classmethod
+    def choose_job_class(cls, data):
+        """Return the right job class based on the request data
+        """
+        return cls.jobs[data['action']]
+
     def create(self, validated_data):
         """Launches a long-running task, and returns the corresponding AsyncResult"""
-        # This might need to be modified if the first task of a Job requires more arguments
-        job = self.jobs[validated_data['action']].run((validated_data['parameters']['dataset_id'],))
+        # choose the right Job class
+        job = self.choose_job_class(validated_data).run(validated_data['parameters'])
         job.save()
         return job
 
@@ -59,9 +80,7 @@ class JobSerializer(rest_framework.serializers.Serializer):
         """Validates the request data"""
         # No need to check for the presence of 'action' and 'parameters',
         # because fields are checked before this method comes into play
-        attrs['parameters'] = self.jobs[attrs['action']].check_parameters(
-            attrs['parameters']
-        )
+        attrs['parameters'] = self.choose_job_class(attrs).check_parameters(attrs['parameters'])
         return attrs
 
 
