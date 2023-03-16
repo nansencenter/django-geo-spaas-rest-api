@@ -73,8 +73,8 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
 
     @classmethod
     def get_signature(cls, parameters):
-        format = parameters['format']
-        if format == 'idf':
+        conversion_format = parameters['format']
+        if conversion_format == 'idf':
             return celery.chain(
                 tasks_core.download.signature(),
                 tasks_core.unarchive.signature(),
@@ -83,7 +83,7 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
                 tasks_idf.convert_to_idf.signature(),
                 tasks_core.archive.signature(),
                 tasks_core.publish.signature())
-        elif format == 'syntool':
+        elif conversion_format == 'syntool':
             return celery.chain(
                 tasks_syntool.check_ingested.signature(),
                 tasks_core.download.signature(),
@@ -94,7 +94,7 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
                 tasks_syntool.db_insert.signature(),
                 tasks_core.remove_downloaded.signature())
         else:
-            raise RuntimeError(f"Unknown format {format}")
+            raise RuntimeError(f"Unknown format {conversion_format}")
 
     @staticmethod
     def check_parameters(parameters):
