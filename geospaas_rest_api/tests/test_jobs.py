@@ -1,4 +1,5 @@
 """Tests for the long-running tasks endpoint of the GeoSPaaS REST API"""
+import importlib
 import os
 import unittest
 import unittest.mock as mock
@@ -177,19 +178,11 @@ class JobModelTests(django.test.TestCase):
 class DownloadJobTests(unittest.TestCase):
     """Tests for the DownloadJob class"""
 
-    def test_requirement_error(self):
-        """An exception must be raised if one of the requirements is
-        missing when instantiating
-        """
-        with mock.patch('geospaas_rest_api.models.tasks_core', None):
-            with self.assertRaises(ImportError):
-                models.DownloadJob()
-
     def test_get_signature_no_cropping(self):
         """Test getting the right signature when no cropping is
         required
         """
-        with mock.patch('geospaas_rest_api.models.tasks_core') as mock_tasks, \
+        with mock.patch('geospaas_rest_api.models.processing_jobs.tasks_core') as mock_tasks, \
              mock.patch('celery.chain') as mock_chain:
             _ = models.DownloadJob.get_signature({})
         mock_chain.assert_called_with([
@@ -201,7 +194,7 @@ class DownloadJobTests(unittest.TestCase):
     def test_get_signature_cropping(self):
         """Test getting the right signature when cropping is required
         """
-        with mock.patch('geospaas_rest_api.models.tasks_core') as mock_tasks, \
+        with mock.patch('geospaas_rest_api.models.processing_jobs.tasks_core') as mock_tasks, \
              mock.patch('celery.chain') as mock_chain:
             _ = models.DownloadJob.get_signature({'bounding_box': [0, 20, 20, 0]})
         mock_chain.assert_called_with(
@@ -316,9 +309,10 @@ class ConvertJobTests(unittest.TestCase):
 
     def test_get_signature_syntool(self):
         """Test the right signature is returned"""
-        with mock.patch('geospaas_rest_api.models.tasks_core') as mock_core_tasks, \
-                mock.patch('geospaas_rest_api.models.tasks_syntool') as mock_syntool_tasks, \
-                mock.patch('celery.chain') as mock_chain:
+        with mock.patch('geospaas_rest_api.models.processing_jobs.tasks_core') as mock_core_tasks, \
+             mock.patch(
+                'geospaas_rest_api.models.processing_jobs.tasks_syntool') as mock_syntool_tasks, \
+             mock.patch('celery.chain') as mock_chain:
             _ = models.ConvertJob.get_signature({
                 'format': 'syntool',
                 'bounding_box': [0, 20, 20, 0]
@@ -338,8 +332,8 @@ class ConvertJobTests(unittest.TestCase):
 
     def test_get_signature_idf(self):
         """Test the right signature is returned"""
-        with mock.patch('geospaas_rest_api.models.tasks_core') as mock_core_tasks, \
-             mock.patch('geospaas_rest_api.models.tasks_idf') as mock_idf_tasks, \
+        with mock.patch('geospaas_rest_api.models.processing_jobs.tasks_core') as mock_core_tasks, \
+             mock.patch('geospaas_rest_api.models.processing_jobs.tasks_idf') as mock_idf_tasks, \
              mock.patch('celery.chain') as mock_chain:
             _ = models.ConvertJob.get_signature({
                 'format': 'idf',
@@ -363,7 +357,8 @@ class SyntoolCleanupJobTests(unittest.TestCase):
 
     def test_get_signature(self):
         """Test getting the right signature"""
-        with mock.patch('geospaas_rest_api.models.tasks_syntool') as mock_syntool_tasks:
+        with mock.patch(
+                'geospaas_rest_api.models.processing_jobs.tasks_syntool') as mock_syntool_tasks:
             self.assertEqual(
                 models.SyntoolCleanupJob.get_signature({}),
                 mock_syntool_tasks.cleanup_ingested.signature.return_value)
@@ -379,25 +374,25 @@ class SyntoolCleanupJobTests(unittest.TestCase):
     def test_check_parameters_unknown(self):
         """An error should be raised when an unknown parameter is given
         """
-        with self.assertRaises(models.ValidationError):
+        with self.assertRaises(ValidationError):
             models.SyntoolCleanupJob.check_parameters({'foo': 'bar'})
 
     def test_check_parameters_no_date(self):
         """An error should be raised when no date is given
         """
-        with self.assertRaises(models.ValidationError):
+        with self.assertRaises(ValidationError):
             models.SyntoolCleanupJob.check_parameters({'created': True})
 
     def test_check_parameters_bad_date(self):
         """An error should be raised when an invalid date is given
         """
-        with self.assertRaises(models.ValidationError):
+        with self.assertRaises(ValidationError):
             models.SyntoolCleanupJob.check_parameters({'date': 'foo'})
 
     def test_check_parameters_wrong_type(self):
         """An error should be raised when `created` is not a boolean
         """
-        with self.assertRaises(models.ValidationError):
+        with self.assertRaises(ValidationError):
             models.SyntoolCleanupJob.check_parameters({'date': '2023-01-01', 'created': 'true'})
 
     def test_make_task_parameters(self):
@@ -414,7 +409,8 @@ class HarvestJobTests(unittest.TestCase):
 
     def test_get_signature(self):
         """Test getting the right signature"""
-        with mock.patch('geospaas_rest_api.models.tasks_harvesting') as mock_harvesting_tasks:
+        with mock.patch(
+            'geospaas_rest_api.models.processing_jobs.tasks_harvesting') as mock_harvesting_tasks:
             self.assertEqual(
                 models.HarvestJob.get_signature({}),
                 mock_harvesting_tasks.start_harvest.signature.return_value)
@@ -429,14 +425,14 @@ class HarvestJobTests(unittest.TestCase):
     def test_check_parameters_unknown(self):
         """An error should be raised when an unknown parameter is given
         """
-        with self.assertRaises(models.ValidationError):
+        with self.assertRaises(ValidationError):
             models.HarvestJob.check_parameters({'foo': 'bar'})
 
     def test_check_parameters_wrong_type(self):
         """An error should be raised when `search_config_dict` is not a
         dict
         """
-        with self.assertRaises(models.ValidationError):
+        with self.assertRaises(ValidationError):
             models.HarvestJob.check_parameters({'search_config_dict': 'foo'})
 
     def test_make_task_parameters(self):
