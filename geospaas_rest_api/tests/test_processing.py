@@ -266,18 +266,18 @@ class ConvertJobTests(unittest.TestCase):
 
     def test_check_parameters_ok(self):
         """Test the checking of correct parameters"""
-        parameters = {'dataset_id': 1,}
+        parameters = {'dataset_id': 1, 'format': 'idf'}
         self.assertEqual(models.ConvertJob.check_parameters(parameters), parameters)
 
     def test_check_parameters_wrong_key(self):
         """`check_parameters()` must raise an exception if there is a wrong key in the parameters"""
-        parameters = {'wrong_key': 1}
+        parameters = {'dataset_id': 1, 'format': 'idf', 'wrong_key': 1}
         with self.assertRaises(ValidationError) as raised:
             models.ConvertJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(string="The download action accepts only these parameter: "
-                                "dataset_id, bounding_box",
+            [ErrorDetail(string="The download action accepts only these parameters: "
+                                "dataset_id, format, bounding_box",
                          code='invalid')])
 
     def test_check_parameters_extra_param(self):
@@ -287,8 +287,8 @@ class ConvertJobTests(unittest.TestCase):
             models.ConvertJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(string="The download action accepts only these parameter: "
-                                "dataset_id, bounding_box",
+            [ErrorDetail(string="The download action accepts only these parameters: "
+                                "dataset_id, format, bounding_box",
                          code='invalid')])
 
     def test_check_parameters_wrong_type_for_dataset_id(self):
@@ -308,42 +308,21 @@ class ConvertJobTests(unittest.TestCase):
         'bounding_box' value is of the wrong type or length
         """
         with self.assertRaises(ValidationError):
-            models.ConvertJob.check_parameters({'dataset_id': 1, 'bounding_box': '2'})
+            models.ConvertJob.check_parameters(
+                {'dataset_id': 1, 'format': 'idf', 'bounding_box': '2'})
         with self.assertRaises(ValidationError):
-            models.ConvertJob.check_parameters({'dataset_id': 1, 'bounding_box': [2]})
+            models.ConvertJob.check_parameters(
+                {'dataset_id': 1, 'format': 'idf', 'bounding_box': [2]})
 
-
-class IDFConvertJobTests(unittest.TestCase):
-    """Tests for the IDFConvertJob class"""
-
-    def test_get_signature(self):
+    def test_get_signature_syntool(self):
         """Test the right signature is returned"""
         with mock.patch('geospaas_rest_api.models.tasks_core') as mock_core_tasks, \
-             mock.patch('geospaas_rest_api.models.tasks_idf') as mock_idf_tasks, \
-             mock.patch('celery.chain') as mock_chain:
-            _ = models.IDFConvertJob.get_signature({'bounding_box': [0, 20, 20, 0]})
-        mock_chain.assert_called_with(
-            mock_core_tasks.download.signature.return_value,
-            mock_core_tasks.unarchive.signature.return_value,
-            mock_core_tasks.crop.signature.return_value,
-            mock_idf_tasks.convert_to_idf.signature.return_value,
-            mock_core_tasks.archive.signature.return_value,
-            mock_core_tasks.publish.signature.return_value,
-        )
-        self.assertListEqual(
-            mock_core_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
-            [0, 20, 20, 0])
-
-
-class SyntoolConvertJobTests(unittest.TestCase):
-    """Tests for the SyntoolConvertJob class"""
-
-    def test_get_signature(self):
-        """Test the right signature is returned"""
-        with mock.patch('geospaas_rest_api.models.tasks_core') as mock_core_tasks, \
-             mock.patch('geospaas_rest_api.models.tasks_syntool') as mock_syntool_tasks, \
-             mock.patch('celery.chain') as mock_chain:
-            _ = models.SyntoolConvertJob.get_signature({'bounding_box': [0, 20, 20, 0]})
+                mock.patch('geospaas_rest_api.models.tasks_syntool') as mock_syntool_tasks, \
+                mock.patch('celery.chain') as mock_chain:
+            _ = models.ConvertJob.get_signature({
+                'format': 'syntool',
+                'bounding_box': [0, 20, 20, 0]
+            })
         mock_chain.assert_called_with(
             mock_syntool_tasks.check_ingested.signature.return_value,
             mock_core_tasks.download.signature.return_value,
@@ -352,6 +331,27 @@ class SyntoolConvertJobTests(unittest.TestCase):
             mock_syntool_tasks.convert.signature.return_value,
             mock_syntool_tasks.db_insert.signature.return_value,
             mock_core_tasks.remove_downloaded.signature.return_value,
+        )
+        self.assertListEqual(
+            mock_core_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
+            [0, 20, 20, 0])
+
+    def test_get_signature_idf(self):
+        """Test the right signature is returned"""
+        with mock.patch('geospaas_rest_api.models.tasks_core') as mock_core_tasks, \
+             mock.patch('geospaas_rest_api.models.tasks_idf') as mock_idf_tasks, \
+             mock.patch('celery.chain') as mock_chain:
+            _ = models.ConvertJob.get_signature({
+                'format': 'idf',
+                'bounding_box': [0, 20, 20, 0]
+            })
+        mock_chain.assert_called_with(
+            mock_core_tasks.download.signature.return_value,
+            mock_core_tasks.unarchive.signature.return_value,
+            mock_core_tasks.crop.signature.return_value,
+            mock_idf_tasks.convert_to_idf.signature.return_value,
+            mock_core_tasks.archive.signature.return_value,
+            mock_core_tasks.publish.signature.return_value,
         )
         self.assertListEqual(
             mock_core_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
@@ -611,7 +611,7 @@ class JobSerializerTests(django.test.TestCase):
             'action': 'convert', 'parameters': {'dataset_id': 1, 'format': 'idf'}
         }
         serializer = serializers.JobSerializer()
-        with mock.patch.object(models.IDFConvertJob, 'get_signature') as mock_get_signature, \
+        with mock.patch.object(models.ConvertJob, 'get_signature') as mock_get_signature, \
              mock.patch('geospaas_rest_api.models.isinstance', return_value=True):
             mock_get_signature.return_value.delay.return_value.task_id = 1
             serializer.create(validated_data)
@@ -713,10 +713,10 @@ class JobSerializerTests(django.test.TestCase):
             models.DownloadJob)
         self.assertEqual(
             serializer.choose_job_class({'action': 'convert', 'parameters': {'format': 'idf'}}),
-            models.IDFConvertJob)
+            models.ConvertJob)
         self.assertEqual(
             serializer.choose_job_class({'action': 'convert', 'parameters': {'format': 'syntool'}}),
-            models.SyntoolConvertJob)
+            models.ConvertJob)
         self.assertEqual(
             serializer.choose_job_class({'action': 'harvest', 'parameters': {}}),
             models.HarvestJob)
