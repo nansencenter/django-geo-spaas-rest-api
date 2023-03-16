@@ -31,6 +31,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'rest_framework_filters',
+    'geospaas_processing',
+    'geospaas_harvesting',
 ]
 
 MIDDLEWARE = [

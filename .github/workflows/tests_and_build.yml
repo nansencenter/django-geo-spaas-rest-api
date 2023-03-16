@@ -3,6 +3,9 @@ name: "Unit tests and builds"
 on: push
 env:
   TESTING_IMAGE_NAME: geospaas_rest_api_tests
+  GEOSPAAS_PROCESSING_VERSION: 3.0.1
+  GEOSPAAS_HARVESTING_VERSION: 3.7.1
+  METANORM_VERSION: 4.1.1
 jobs:
   tests_build:
     name: Run unit tests and build package
@@ -36,6 +39,10 @@ jobs:
           push: false
           load: true
           tags: ${{ env.TESTING_IMAGE_NAME }}
+          build-args: |
+            GEOSPAAS_PROCESSING_VERSION=${{ env.GEOSPAAS_PROCESSING_VERSION }}
+            GEOSPAAS_HARVESTING_VERSION=${{ env.GEOSPAAS_HARVESTING_VERSION }}
+            METANORM_VERSION=${{ env.METANORM_VERSION }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
