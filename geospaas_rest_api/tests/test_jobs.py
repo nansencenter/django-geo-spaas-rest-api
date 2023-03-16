@@ -273,6 +273,14 @@ class ConvertJobTests(unittest.TestCase):
                                 "dataset_id, format, bounding_box",
                          code='invalid')])
 
+    def test_check_parameters_wrong_format(self):
+        """`check_parameters()` must raise an exception if the format
+        is not one of the valid options
+        """
+        parameters = {'dataset_id': 1, 'format': 'foo',}
+        with self.assertRaises(ValidationError) as raised:
+            models.ConvertJob.check_parameters(parameters)
+
     def test_check_parameters_extra_param(self):
         """`check_parameters()` must raise an exception if an extra parameter is given"""
         parameters = {'dataset_id': 1, 'extra_param': 'foo'}
@@ -350,6 +358,14 @@ class ConvertJobTests(unittest.TestCase):
         self.assertListEqual(
             mock_core_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
             [0, 20, 20, 0])
+
+    def test_get_signature_wrong_format(self):
+        """An exception should be raised when trying to get a signature
+        using an invalid format. This should never happen since
+        parameters are checked before
+        """
+        with self.assertRaises(RuntimeError):
+            _ = models.ConvertJob.get_signature({'format': 'foo'})
 
 
 class SyntoolCleanupJobTests(unittest.TestCase):
