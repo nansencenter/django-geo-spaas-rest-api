@@ -1,7 +1,7 @@
 """Django models"""
 try:
     import geospaas_processing
-except ImportError:
+except ImportError:  # pragma: no cover
     geospaas_processing = None
 
 from .base import Job
