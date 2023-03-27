@@ -10,7 +10,7 @@ class Job(models.Model):
     # Database fields
     task_id = models.CharField(
         unique=True, max_length=255,
-        help_text='ID of the first task in the job')
+        help_text='ID of the last task in the job')
     date_created = models.DateTimeField(
         auto_now_add=True, db_index=True,
         verbose_name='Creation DateTime',
