@@ -84,15 +84,16 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
                 tasks_core.archive.signature(),
                 tasks_core.publish.signature())
         elif conversion_format == 'syntool':
-            return celery.chain(
-                tasks_syntool.check_ingested.signature(),
-                tasks_core.download.signature(),
-                tasks_core.unarchive.signature(),
-                tasks_core.crop.signature(
-                    kwargs={'bounding_box': parameters.get('bounding_box', None)}),
-                tasks_syntool.convert.signature(),
-                tasks_syntool.db_insert.signature(),
-                tasks_core.remove_downloaded.signature())
+            return tasks_syntool.check_ingested.signature(kwargs={
+                'to_execute': celery.chain(
+                    tasks_core.download.signature(),
+                    tasks_core.unarchive.signature(),
+                    tasks_core.crop.signature(
+                        kwargs={'bounding_box': parameters.get('bounding_box', None)}),
+                    tasks_syntool.convert.signature(),
+                    tasks_syntool.db_insert.signature(),
+                    tasks_core.remove_downloaded.signature())
+            })
         else:
             raise RuntimeError(f"Unknown format {conversion_format}")
 
