@@ -325,8 +325,9 @@ class ConvertJobTests(unittest.TestCase):
                 'format': 'syntool',
                 'bounding_box': [0, 20, 20, 0]
             })
+        mock_syntool_tasks.check_ingested.signature.assert_called_with(
+            kwargs={'to_execute': mock_chain.return_value})
         mock_chain.assert_called_with(
-            mock_syntool_tasks.check_ingested.signature.return_value,
             mock_core_tasks.download.signature.return_value,
             mock_core_tasks.unarchive.signature.return_value,
             mock_core_tasks.crop.signature.return_value,
