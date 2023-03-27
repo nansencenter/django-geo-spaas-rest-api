@@ -16,9 +16,6 @@ class Job(models.Model):
         verbose_name='Creation DateTime',
         help_text='Datetime: creation date of the job')
 
-    # Class attribute to be defined in child classes
-    signature = None
-
     @classmethod
     def get_signature(cls, parameters):
         """Returns a Celery signature which will be executed when the
