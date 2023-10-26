@@ -1,8 +1,5 @@
-"""
-Custom filters for the REST API
-"""
+"""Custom filters for the base geospaas API"""
 import rest_framework_filters
-from rest_framework.exceptions import ValidationError
 from django.contrib.gis.db.models import GeometryField
 from django_filters.rest_framework.filters import CharFilter
 
@@ -232,3 +229,5 @@ class DatasetRelationshipFilter(rest_framework_filters.FilterSet):
         field_name='parent',
         queryset=geospaas.catalog.models.Dataset.objects.all()
     )
+
+

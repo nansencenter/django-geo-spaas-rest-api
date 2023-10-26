@@ -1,15 +1,67 @@
-"""Jobs that rely on geospaas_processing"""
-from collections.abc import Sequence
-
-import celery
-import dateutil.parser
-import geospaas_processing.tasks.core as tasks_core
-import geospaas_processing.tasks.idf as tasks_idf
-import geospaas_processing.tasks.harvesting as tasks_harvesting
-import geospaas_processing.tasks.syntool as tasks_syntool
+"""Processing API model classes"""
 from rest_framework.exceptions import ValidationError
+import geospaas_processing.tasks.syntool as tasks_syntool
+import geospaas_processing.tasks.harvesting as tasks_harvesting
+import geospaas_processing.tasks.idf as tasks_idf
+import geospaas_processing.tasks.core as tasks_core
+import celery
+from collections.abc import Sequence
+from celery.result import AsyncResult
+from django.db import models
 
-from .base import Job
+
+class Job(models.Model):
+    """Base model that gives access to the status and result of
+    running one or more Celery tasks.
+    """
+    # Database fields
+    task_id = models.CharField(
+        unique=True, max_length=255,
+        help_text='ID of the last task in the job')
+    date_created = models.DateTimeField(
+        auto_now_add=True, db_index=True,
+        verbose_name='Creation DateTime',
+        help_text='Datetime: creation date of the job')
+
+    @classmethod
+    def get_signature(cls, parameters):
+        """Returns a Celery signature which will be executed when the
+        job is run. Can be one task or several organized using a
+        canvas.
+        See https://docs.celeryq.dev/en/stable/userguide/canvas.html
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def check_parameters(parameters):
+        """Checks that the parameters are valid for the current Job subclass"""
+        raise NotImplementedError
+
+    @staticmethod
+    def make_task_parameters(parameters):
+        """Returns the right task parameters from the request data"""
+        raise NotImplementedError
+
+    @classmethod
+    def run(cls, parameters):
+        """This method should be used to create jobs.
+        Should return a Job instance.
+        """
+        args, kwargs = cls.make_task_parameters(parameters)
+        result = cls.get_signature(parameters).delay(*args, **kwargs)
+        return cls(task_id=result.task_id)
+
+    def get_current_task_result(self):
+        """Get the AsyncResult of the currently running task"""
+        current_result = AsyncResult(self.task_id)
+        finished = False
+        while current_result.ready():
+            try:
+                current_result = current_result.children[0]
+            except IndexError:
+                finished = True
+                break
+        return current_result, finished
 
 
 class DownloadJob(Job):
@@ -138,33 +190,21 @@ class SyntoolCleanupJob(Job):
 
     @classmethod
     def get_signature(cls, parameters):
-        return tasks_syntool.cleanup_ingested.signature()
 
     @staticmethod
     def check_parameters(parameters):
-        accepted_keys = ('date', 'created')
         if not set(parameters).issubset(accepted_keys):
             raise ValidationError(
                 "The syntool cleanup action accepts only these parameters: " +
                 str({', '.join(accepted_keys)}))
 
         try:
-            dateutil.parser.parse(parameters['date'])
         except KeyError as error:
-            raise ValidationError("The date parameter is mandatory") from error
-        except dateutil.parser.ParserError as error:
-            raise ValidationError("'date' must be a valid date string") from error
-
-        if not isinstance(parameters.get('created', False), bool):  # default is just a placeholder
-            raise ValidationError("'created' must be a boolean")
 
         return parameters
 
     @staticmethod
     def make_task_parameters(parameters):
-        return (
-            (dateutil.parser.parse(parameters['date']),),
-            {'created': parameters.get('created', False)})
 
 
 class HarvestJob(Job):
