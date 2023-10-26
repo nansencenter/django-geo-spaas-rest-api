@@ -3,9 +3,9 @@ name: "Unit tests and builds"
 on: push
 env:
   TESTING_IMAGE_NAME: geospaas_rest_api_tests
-  GEOSPAAS_PROCESSING_VERSION: 3.0.1
-  GEOSPAAS_HARVESTING_VERSION: 3.7.1
-  METANORM_VERSION: 4.1.1
+  GEOSPAAS_PROCESSING_VERSION: 3.1.0
+  GEOSPAAS_HARVESTING_VERSION: 3.8.0
+  METANORM_VERSION: 4.1.2
 jobs:
   tests_build:
     name: Run unit tests and build package
@@ -15,16 +15,16 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASS }}
 
       - name: Cache Docker layers
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -33,7 +33,7 @@ jobs:
 
       - name: Build testing image
         id: docker_build
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: false

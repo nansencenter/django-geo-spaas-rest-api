@@ -1,45 +1,10 @@
-"""Views for the GeoSPaaS REST API"""
-import django.http
-import django_celery_results.models
+"""Views for the base geospaas API"""
 import geospaas.catalog.models
 import geospaas.vocabularies.models
-import rest_framework.mixins
-from rest_framework.pagination import CursorPagination
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
-import geospaas_rest_api.filters as filters
-import geospaas_rest_api.models as models
-import geospaas_rest_api.serializers as serializers
-
-
-class DateOrderedCursorPagination(CursorPagination):
-    """Pagination class ordering by decreasing date_created"""
-    ordering = '-date_created'
-    page_size = 100
-
-
-class IdOrderedCursorPagination(CursorPagination):
-    """Pagination class ordering by decreasing date_created"""
-    ordering = '-id'
-    page_size = 100
-
-
-class JobViewSet(rest_framework.mixins.CreateModelMixin,
-                 rest_framework.mixins.ListModelMixin,
-                 rest_framework.mixins.RetrieveModelMixin,
-                 GenericViewSet):
-    """API endpoint to manage long running jobs"""
-    queryset = models.Job.objects.all()
-    serializer_class = serializers.JobSerializer
-    pagination_class = IdOrderedCursorPagination
-
-
-class TaskViewSet(ReadOnlyModelViewSet):
-    """API endpoint to manage long running tasks"""
-    queryset = django_celery_results.models.TaskResult.objects.all()
-    lookup_field = 'task_id'
-    serializer_class = serializers.TaskResultSerializer
-    pagination_class = DateOrderedCursorPagination
+import geospaas_rest_api.base_api.filters as filters
+import geospaas_rest_api.base_api.serializers as serializers
 
 
 class GeographicLocationViewSet(ReadOnlyModelViewSet):

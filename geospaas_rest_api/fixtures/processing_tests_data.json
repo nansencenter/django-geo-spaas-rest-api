@@ -313,5 +313,25 @@
             "task_id": "733d3a63-7a5a-4a1e-8cf0-750ae393dd99",
             "date_created": "2020-07-16T13:58:01.918Z"
         }
+    },
+    {
+        "model": "geospaas_processing.processingresult",
+        "pk": 1,
+        "fields": {
+            "dataset": 1,
+            "path": "ingested/product_name/granule_name_1/",
+            "type": "syntool",
+            "created": "2023-10-25T15:38:47.000Z"
+        }
+    },
+    {
+        "model": "geospaas_processing.processingresult",
+        "pk": 2,
+        "fields": {
+            "dataset": 2,
+            "path": "ingested/product_name/granule_name_2/",
+            "type": "syntool",
+            "created": "2023-10-26T09:10:19.000Z"
+        }
     }
 ]

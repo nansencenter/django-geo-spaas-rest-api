@@ -1,3 +1,4 @@
+# pylint: disable=ungrouped-imports
 """geospaas_rest_api URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -15,25 +16,27 @@ Including another URLconf
 """
 import os
 
+import geospaas_rest_api.base_api.views as base_views
 from rest_framework import routers
-from geospaas_rest_api import views
 
 
 router = routers.DefaultRouter()
 
-router.register(r'datacenters', views.DataCenterViewSet)
-router.register(r'dataset_relationships', views.DatasetRelationshipViewSet)
-router.register(r'dataset_uris', views.DatasetURIViewSet)
-router.register(r'datasets', views.DatasetViewSet)
-router.register(r'gcmd_locations', views.LocationViewSet)
-router.register(r'geographic_locations', views.GeographicLocationViewSet)
-router.register(r'instruments', views.InstrumentViewSet)
-router.register(r'parameters', views.ParameterViewSet)
-router.register(r'platforms', views.PlatformViewSet)
-router.register(r'science_keywords', views.ScienceKeywordViewSet)
-router.register(r'sources', views.SourceViewSet)
+router.register(r'datacenters', base_views.DataCenterViewSet)
+router.register(r'dataset_relationships', base_views.DatasetRelationshipViewSet)
+router.register(r'dataset_uris', base_views.DatasetURIViewSet)
+router.register(r'datasets', base_views.DatasetViewSet)
+router.register(r'gcmd_locations', base_views.LocationViewSet)
+router.register(r'geographic_locations', base_views.GeographicLocationViewSet)
+router.register(r'instruments', base_views.InstrumentViewSet)
+router.register(r'parameters', base_views.ParameterViewSet)
+router.register(r'platforms', base_views.PlatformViewSet)
+router.register(r'science_keywords', base_views.ScienceKeywordViewSet)
+router.register(r'sources', base_views.SourceViewSet)
 if os.environ.get('GEOSPAAS_REST_API_ENABLE_PROCESSING', 'false').lower() == 'true':
-    router.register(r'tasks', views.TaskViewSet)
-    router.register(r'jobs', views.JobViewSet)
+    import geospaas_rest_api.processing_api.views as processing_views
+    router.register(r'tasks', processing_views.TaskViewSet)
+    router.register(r'jobs', processing_views.JobViewSet)
+    router.register(r'processing_results', processing_views.ProcessingResultViewSet)
 
 urlpatterns = router.urls
