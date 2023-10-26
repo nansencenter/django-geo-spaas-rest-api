@@ -1,12 +1,5 @@
 """Tests for the read-only part of the GeoSPaaS REST API"""
-import unittest.mock as mock
-
 import django.test
-import rest_framework.request
-import rest_framework.views
-
-import geospaas_rest_api.filters
-import geospaas_rest_api.views
 
 
 class BasicAPITests(django.test.TestCase):

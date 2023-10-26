@@ -12,7 +12,7 @@ import django.test
 from rest_framework.exceptions import ErrorDetail, ValidationError
 
 import geospaas_rest_api.models as models
-import geospaas_rest_api.serializers as serializers
+import geospaas_rest_api.processing_api.serializers as serializers
 
 
 os.environ.setdefault('GEOSPAAS_REST_API_ENABLE_PROCESSING', 'true')
@@ -182,7 +182,7 @@ class DownloadJobTests(unittest.TestCase):
         """Test getting the right signature when no cropping is
         required
         """
-        with mock.patch('geospaas_rest_api.models.processing_jobs.tasks_core') as mock_tasks, \
+        with mock.patch('geospaas_rest_api.processing_api.models.tasks_core') as mock_tasks, \
              mock.patch('celery.chain') as mock_chain:
             _ = models.DownloadJob.get_signature({})
         mock_chain.assert_called_with([
@@ -194,7 +194,7 @@ class DownloadJobTests(unittest.TestCase):
     def test_get_signature_cropping(self):
         """Test getting the right signature when cropping is required
         """
-        with mock.patch('geospaas_rest_api.models.processing_jobs.tasks_core') as mock_tasks, \
+        with mock.patch('geospaas_rest_api.processing_api.models.tasks_core') as mock_tasks, \
              mock.patch('celery.chain') as mock_chain:
             _ = models.DownloadJob.get_signature({'bounding_box': [0, 20, 20, 0]})
         mock_chain.assert_called_with(
@@ -317,9 +317,9 @@ class ConvertJobTests(unittest.TestCase):
 
     def test_get_signature_syntool(self):
         """Test the right signature is returned"""
-        with mock.patch('geospaas_rest_api.models.processing_jobs.tasks_core') as mock_core_tasks, \
+        with mock.patch('geospaas_rest_api.processing_api.models.tasks_core') as mock_core_tasks, \
              mock.patch(
-                'geospaas_rest_api.models.processing_jobs.tasks_syntool') as mock_syntool_tasks, \
+                'geospaas_rest_api.processing_api.models.tasks_syntool') as mock_syntool_tasks, \
              mock.patch('celery.chain') as mock_chain:
             _ = models.ConvertJob.get_signature({
                 'format': 'syntool',
@@ -341,8 +341,8 @@ class ConvertJobTests(unittest.TestCase):
 
     def test_get_signature_idf(self):
         """Test the right signature is returned"""
-        with mock.patch('geospaas_rest_api.models.processing_jobs.tasks_core') as mock_core_tasks, \
-             mock.patch('geospaas_rest_api.models.processing_jobs.tasks_idf') as mock_idf_tasks, \
+        with mock.patch('geospaas_rest_api.processing_api.models.tasks_core') as mock_core_tasks, \
+            mock.patch('geospaas_rest_api.processing_api.models.tasks_idf') as mock_idf_tasks, \
              mock.patch('celery.chain') as mock_chain:
             _ = models.ConvertJob.get_signature({
                 'format': 'idf',
@@ -375,18 +375,18 @@ class SyntoolCleanupJobTests(unittest.TestCase):
     def test_get_signature(self):
         """Test getting the right signature"""
         with mock.patch(
-                'geospaas_rest_api.models.processing_jobs.tasks_syntool') as mock_syntool_tasks:
+                'geospaas_rest_api.processing_api.models.tasks_syntool') as mock_syntool_tasks:
             self.assertEqual(
                 models.SyntoolCleanupJob.get_signature({}),
-                mock_syntool_tasks.cleanup_ingested.signature.return_value)
+                mock_syntool_tasks.cleanup.signature.return_value)
 
     def test_check_parameters_ok(self):
         """Test that check_parameters() returns the parameters when
         they are valid
         """
         self.assertDictEqual(
-            models.SyntoolCleanupJob.check_parameters({'date': '2020-02-01'}),
-            {'date': '2020-02-01'})
+            models.SyntoolCleanupJob.check_parameters({'criteria': {'id': 539}}),
+            {'criteria': {'id': 539}})
 
     def test_check_parameters_unknown(self):
         """An error should be raised when an unknown parameter is given
@@ -394,31 +394,26 @@ class SyntoolCleanupJobTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             models.SyntoolCleanupJob.check_parameters({'foo': 'bar'})
 
-    def test_check_parameters_no_date(self):
-        """An error should be raised when no date is given
+    def test_check_parameters_no_criteria(self):
+        """An error should be raised when the criteria parameter is
+        absent
         """
         with self.assertRaises(ValidationError):
-            models.SyntoolCleanupJob.check_parameters({'created': True})
-
-    def test_check_parameters_bad_date(self):
-        """An error should be raised when an invalid date is given
-        """
-        with self.assertRaises(ValidationError):
-            models.SyntoolCleanupJob.check_parameters({'date': 'foo'})
+            models.SyntoolCleanupJob.check_parameters({})
 
     def test_check_parameters_wrong_type(self):
-        """An error should be raised when `created` is not a boolean
+        """An error should be raised when `criteria` is not a dictionary
         """
         with self.assertRaises(ValidationError):
-            models.SyntoolCleanupJob.check_parameters({'date': '2023-01-01', 'created': 'true'})
+            models.SyntoolCleanupJob.check_parameters({'criteria': 'id=1'})
 
     def test_make_task_parameters(self):
         """Test that the right arguments are builts from the request
         parameters
         """
         self.assertTupleEqual(
-            models.SyntoolCleanupJob.make_task_parameters({'date': '2020-02-01', 'created': True}),
-            ((datetime(2020, 2, 1),), {'created': True}))
+            models.SyntoolCleanupJob.make_task_parameters({'criteria': {'id': 539}}),
+            (({'id': 539},), {}))
 
 
 class HarvestJobTests(unittest.TestCase):
@@ -427,7 +422,7 @@ class HarvestJobTests(unittest.TestCase):
     def test_get_signature(self):
         """Test getting the right signature"""
         with mock.patch(
-            'geospaas_rest_api.models.processing_jobs.tasks_harvesting') as mock_harvesting_tasks:
+            'geospaas_rest_api.processing_api.models.tasks_harvesting') as mock_harvesting_tasks:
             self.assertEqual(
                 models.HarvestJob.get_signature({}),
                 mock_harvesting_tasks.start_harvest.signature.return_value)
@@ -736,3 +731,42 @@ class JobSerializerTests(django.test.TestCase):
         self.assertEqual(
             serializer.choose_job_class({'action': 'syntool_cleanup'}),
             models.SyntoolCleanupJob)
+
+
+class ProcessingResultsViewSetTests(django.test.TestCase):
+    """Test processing_results/ endpoints"""
+
+    fixtures = ['processing_tests_data']
+
+    def test_list_tasks(self):
+        """The list of processing results must be returned"""
+        expected_result = {
+            'next': None, 'previous': None,
+            'results': [
+                {
+                    "id": 1,
+                    "dataset": 1,
+                    "path": "ingested/product_name/granule_name_1/",
+                    "type": "syntool",
+                    "created": "2023-10-25T15:38:47Z"
+                }, {
+                    "id": 2,
+                    "dataset": 2,
+                    "path": "ingested/product_name/granule_name_2/",
+                    "type": "syntool",
+                    "created": "2023-10-26T09:10:19Z"
+                }
+            ]
+        }
+        self.assertJSONEqual(self.client.get('/api/processing_results/').content, expected_result)
+
+    def test_retrieve_task(self):
+        """The representation of the processing result must be returned"""
+        response = self.client.get('/api/processing_results/1/')
+        self.assertJSONEqual(response.content, {
+            "id": 1,
+            "dataset": 1,
+            "path": "ingested/product_name/granule_name_1/",
+            "type": "syntool",
+            "created": "2023-10-25T15:38:47Z"
+        })
