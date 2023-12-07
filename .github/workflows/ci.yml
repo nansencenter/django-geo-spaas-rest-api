@@ -52,7 +52,7 @@ jobs:
           load: true
           tags: ${{ env.TESTING_IMAGE_NAME }}
           build-args: |
-            BASE_IMAGE=${{ vars.DOCKER_ORG }}/geospaas:latest-slim-python${{ matrix.python_version }}
+            BASE_IMAGE=${{ vars.DOCKER_ORG }}/geospaas:latest-python${{ matrix.python_version }}
             GEOSPAAS_PROCESSING_VERSION=${{ env.GEOSPAAS_PROCESSING_VERSION }}
             GEOSPAAS_HARVESTING_VERSION=${{ env.GEOSPAAS_HARVESTING_VERSION }}
             METANORM_VERSION=${{ env.METANORM_VERSION }}
