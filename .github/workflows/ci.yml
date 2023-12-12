@@ -14,6 +14,8 @@ jobs:
   tests:
     name: Run unit tests and build package
     runs-on: 'ubuntu-latest'
+    env:
+      latest: ${{ matrix.python_version == '3.11' && 'true' || '' }}
     strategy:
       matrix:
         python_version:
@@ -86,11 +88,13 @@ jobs:
              runtests.py"
 
       - name: 'Install Python 3.11'
+        if: ${{ env.latest }}
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
       - name: 'Upload coverage to coveralls.io'
+        if: ${{ env.latest }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pip install coveralls && coveralls --service=github
