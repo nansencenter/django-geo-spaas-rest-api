@@ -1,4 +1,5 @@
-FROM nansencenter/geospaas:latest-slim
+ARG BASE_IMAGE=nansencenter/geospaas:latest
+FROM ${BASE_IMAGE}
 LABEL purpose="Environment for REST API for Django-Geo-SpaaS"
 
 ARG GEOSPAAS_PROCESSING_VERSION
