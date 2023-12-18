@@ -1,4 +1,4 @@
-[![Unit tests and builds](https://github.com/nansencenter/django-geo-spaas-rest-api/actions/workflows/tests_and_build.yml/badge.svg)](https://github.com/nansencenter/django-geo-spaas-rest-api/actions/workflows/tests_and_build.yml) [![Coverage Status](https://coveralls.io/repos/github/nansencenter/django-geo-spaas-rest-api/badge.svg?branch=master)](https://coveralls.io/github/nansencenter/django-geo-spaas-rest-api?branch=master)
+[![Unit tests and builds](https://github.com/nansencenter/django-geo-spaas-rest-api/actions/workflows/ci.yml/badge.svg)](https://github.com/nansencenter/django-geo-spaas-rest-api/actions/workflows/ci.yml) [![Coverage Status](https://coveralls.io/repos/github/nansencenter/django-geo-spaas-rest-api/badge.svg?branch=master)](https://coveralls.io/github/nansencenter/django-geo-spaas-rest-api?branch=master)
 # REST API for django-geo-spaas
 
 `geospaas_rest_api` is a Django application which provides a REST API for the [GeoSPaaS application](https://github.com/nansencenter/django-geo-spaas).
