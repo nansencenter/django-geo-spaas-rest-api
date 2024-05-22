@@ -13,6 +13,7 @@ RUN apt update && \
     pip install --upgrade --no-cache-dir \
     'celery==5.2.*' \
     'django-celery-results==2.2.*' \
+    'django==3.*' \
     django-filter \
     djangorestframework \
     djangorestframework-filters==1.0.0dev2 \

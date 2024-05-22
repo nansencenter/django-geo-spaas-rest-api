@@ -9,6 +9,9 @@ import celery
 import celery.result
 import django.db
 import django.test
+import geospaas_processing.tasks.core as tasks_core
+import geospaas_processing.tasks.idf as tasks_idf
+import geospaas_processing.tasks.syntool as tasks_syntool
 from rest_framework.exceptions import ErrorDetail, ValidationError
 
 import geospaas_rest_api.models as models
@@ -269,8 +272,8 @@ class ConvertJobTests(unittest.TestCase):
             models.ConvertJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(string="The download action accepts only these parameters: "
-                                "dataset_id, format, bounding_box",
+            [ErrorDetail(string="The convert action accepts only these parameters: "
+                                "dataset_id, format, bounding_box, skip_check",
                          code='invalid')])
 
     def test_check_parameters_wrong_format(self):
@@ -288,8 +291,8 @@ class ConvertJobTests(unittest.TestCase):
             models.ConvertJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(string="The download action accepts only these parameters: "
-                                "dataset_id, format, bounding_box",
+            [ErrorDetail(string="The convert action accepts only these parameters: "
+                                "dataset_id, format, bounding_box, skip_check",
                          code='invalid')])
 
     def test_check_parameters_wrong_type_for_dataset_id(self):
@@ -317,48 +320,47 @@ class ConvertJobTests(unittest.TestCase):
 
     def test_get_signature_syntool(self):
         """Test the right signature is returned"""
-        with mock.patch('geospaas_rest_api.processing_api.models.tasks_core') as mock_core_tasks, \
-             mock.patch(
-                'geospaas_rest_api.processing_api.models.tasks_syntool') as mock_syntool_tasks, \
-             mock.patch('celery.chain') as mock_chain:
-            _ = models.ConvertJob.get_signature({
+        self.maxDiff = None
+        base_chain = celery.chain(
+            tasks_core.download.signature(),
+            tasks_core.unarchive.signature(),
+            tasks_core.crop.signature(
+                kwargs={'bounding_box': [0, 20, 20, 0]}),
+            tasks_syntool.convert.signature(),
+            tasks_syntool.db_insert.signature(),
+            tasks_core.remove_downloaded.signature())
+
+        self.assertEqual(
+            models.ConvertJob.get_signature({
                 'format': 'syntool',
                 'bounding_box': [0, 20, 20, 0]
-            })
-        mock_syntool_tasks.check_ingested.signature.assert_called_with(
-            kwargs={'to_execute': mock_chain.return_value})
-        mock_chain.assert_called_with(
-            mock_core_tasks.download.signature.return_value,
-            mock_core_tasks.unarchive.signature.return_value,
-            mock_core_tasks.crop.signature.return_value,
-            mock_syntool_tasks.convert.signature.return_value,
-            mock_syntool_tasks.db_insert.signature.return_value,
-            mock_core_tasks.remove_downloaded.signature.return_value,
-        )
-        self.assertListEqual(
-            mock_core_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
-            [0, 20, 20, 0])
+            }),
+            tasks_syntool.check_ingested.signature(kwargs={'to_execute': base_chain}))
+
+        self.assertEqual(
+            models.ConvertJob.get_signature({
+                'format': 'syntool',
+                'bounding_box': [0, 20, 20, 0],
+                'skip_check': True
+            }),
+            base_chain)
 
     def test_get_signature_idf(self):
         """Test the right signature is returned"""
-        with mock.patch('geospaas_rest_api.processing_api.models.tasks_core') as mock_core_tasks, \
-            mock.patch('geospaas_rest_api.processing_api.models.tasks_idf') as mock_idf_tasks, \
-             mock.patch('celery.chain') as mock_chain:
-            _ = models.ConvertJob.get_signature({
+        self.assertEqual(
+            models.ConvertJob.get_signature({
                 'format': 'idf',
                 'bounding_box': [0, 20, 20, 0]
-            })
-        mock_chain.assert_called_with(
-            mock_core_tasks.download.signature.return_value,
-            mock_core_tasks.unarchive.signature.return_value,
-            mock_core_tasks.crop.signature.return_value,
-            mock_idf_tasks.convert_to_idf.signature.return_value,
-            mock_core_tasks.archive.signature.return_value,
-            mock_core_tasks.publish.signature.return_value,
+            }),
+            celery.chain(
+                tasks_core.download.signature(),
+                tasks_core.unarchive.signature(),
+                tasks_core.crop.signature(
+                    kwargs={'bounding_box': [0, 20, 20, 0]}),
+                tasks_idf.convert_to_idf.signature(),
+                tasks_core.archive.signature(),
+                tasks_core.publish.signature())
         )
-        self.assertListEqual(
-            mock_core_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
-            [0, 20, 20, 0])
 
     def test_get_signature_wrong_format(self):
         """An exception should be raised when trying to get a signature
