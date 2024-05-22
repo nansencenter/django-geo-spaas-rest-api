@@ -136,16 +136,18 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
                 tasks_core.archive.signature(),
                 tasks_core.publish.signature())
         elif conversion_format == 'syntool':
-            return tasks_syntool.check_ingested.signature(kwargs={
-                'to_execute': celery.chain(
-                    tasks_core.download.signature(),
-                    tasks_core.unarchive.signature(),
-                    tasks_core.crop.signature(
-                        kwargs={'bounding_box': parameters.get('bounding_box', None)}),
-                    tasks_syntool.convert.signature(),
-                    tasks_syntool.db_insert.signature(),
-                    tasks_core.remove_downloaded.signature())
-            })
+            syntool_chain = celery.chain(
+                tasks_core.download.signature(),
+                tasks_core.unarchive.signature(),
+                tasks_core.crop.signature(
+                    kwargs={'bounding_box': parameters.get('bounding_box', None)}),
+                tasks_syntool.convert.signature(),
+                tasks_syntool.db_insert.signature(),
+                tasks_core.remove_downloaded.signature())
+            if parameters.pop('skip_check', False):
+                return syntool_chain
+            else:
+                return tasks_syntool.check_ingested.signature(kwargs={'to_execute': syntool_chain})
         else:
             raise RuntimeError(f"Unknown format {conversion_format}")
 
@@ -157,10 +159,10 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
             - bounding_box: 4-elements list
             - format: value in ['idf']
         """
-        accepted_keys = ('dataset_id', 'format', 'bounding_box')
+        accepted_keys = ('dataset_id', 'format', 'bounding_box', 'skip_check')
         if not set(parameters).issubset(set(accepted_keys)):
             raise ValidationError(
-                f"The download action accepts only these parameters: {', '.join(accepted_keys)}")
+                f"The convert action accepts only these parameters: {', '.join(accepted_keys)}")
 
         if not isinstance(parameters['dataset_id'], int):
             raise ValidationError("'dataset_id' must be an integer")
