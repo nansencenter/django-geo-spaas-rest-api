@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+
+[project]
+name = "geospaas_rest_api"
+description = "REST API for GeoSPaaS"
+readme = "README.md"
+authors = [{name = "Adrien Perrin", email = "adrien.perrin@nersc.no"}]
+license = {file = "LICENSE"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: POSIX :: Linux",
+]
+requires-python = ">=3.7"
+dependencies = [
+    "django_geo_spaas",
+    "django-filter",
+    "djangorestframework",
+    "djangorestframework-filters==1.0.0dev2",
+    "markdown",
+]
+urls = {Repository = "https://github.com/nansencenter/django-geo-spaas-rest-api"}
+dynamic = ["version"]
+
+[tool.setuptools]
+packages = ["geospaas_rest_api"]
