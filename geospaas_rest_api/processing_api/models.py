@@ -141,7 +141,8 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
                 tasks_core.unarchive.signature(),
                 tasks_core.crop.signature(
                     kwargs={'bounding_box': parameters.get('bounding_box', None)}),
-                tasks_syntool.convert.signature(),
+                tasks_syntool.convert.signature(
+                    kwargs={'converter_options': parameters.get('converter_options', None)}),
                 tasks_syntool.db_insert.signature(),
                 tasks_core.remove_downloaded.signature())
             if parameters.pop('skip_check', False):
@@ -159,7 +160,7 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
             - bounding_box: 4-elements list
             - format: value in ['idf']
         """
-        accepted_keys = ('dataset_id', 'format', 'bounding_box', 'skip_check')
+        accepted_keys = ('dataset_id', 'format', 'bounding_box', 'skip_check', 'converter_options')
         if not set(parameters).issubset(set(accepted_keys)):
             raise ValidationError(
                 f"The convert action accepts only these parameters: {', '.join(accepted_keys)}")
@@ -177,6 +178,10 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
                      len(parameters['bounding_box']) == 4)):
             raise ValidationError("'bounding_box' must be a sequence in the following format: "
                                   "west, north, east, south")
+
+        if ('converter_option' in parameters and
+                not isinstance(parameters['converter_option'], dict)):
+            raise ValidationError("'converter_option' should be a dictionary")
 
         return parameters
 
