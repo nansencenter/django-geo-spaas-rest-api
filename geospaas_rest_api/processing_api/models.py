@@ -179,9 +179,9 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
             raise ValidationError("'bounding_box' must be a sequence in the following format: "
                                   "west, north, east, south")
 
-        if ('converter_option' in parameters and
-                not isinstance(parameters['converter_option'], dict)):
-            raise ValidationError("'converter_option' should be a dictionary")
+        if ('converter_options' in parameters and
+                not isinstance(parameters['converter_options'], dict)):
+            raise ValidationError("'converter_options' should be a dictionary")
 
         return parameters
 
