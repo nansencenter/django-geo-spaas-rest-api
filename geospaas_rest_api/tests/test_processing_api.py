@@ -273,7 +273,7 @@ class ConvertJobTests(unittest.TestCase):
         self.assertListEqual(
             raised.exception.detail,
             [ErrorDetail(string="The convert action accepts only these parameters: "
-                                "dataset_id, format, bounding_box, skip_check",
+                                "dataset_id, format, bounding_box, skip_check, converter_options",
                          code='invalid')])
 
     def test_check_parameters_wrong_format(self):
@@ -292,7 +292,7 @@ class ConvertJobTests(unittest.TestCase):
         self.assertListEqual(
             raised.exception.detail,
             [ErrorDetail(string="The convert action accepts only these parameters: "
-                                "dataset_id, format, bounding_box, skip_check",
+                                "dataset_id, format, bounding_box, skip_check, converter_options",
                          code='invalid')])
 
     def test_check_parameters_wrong_type_for_dataset_id(self):
@@ -318,6 +318,14 @@ class ConvertJobTests(unittest.TestCase):
             models.ConvertJob.check_parameters(
                 {'dataset_id': 1, 'format': 'idf', 'bounding_box': [2]})
 
+    def test_check_parameters_wrong_converter_options_type(self):
+        """`check_parameters()` must raise an exception if the
+        'converter_options' value is of the wrong type
+        """
+        with self.assertRaises(ValidationError):
+            models.ConvertJob.check_parameters(
+                {'dataset_id': 1, 'format': 'idf', 'converter_options': '2'})
+
     def test_get_signature_syntool(self):
         """Test the right signature is returned"""
         self.maxDiff = None
@@ -326,7 +334,7 @@ class ConvertJobTests(unittest.TestCase):
             tasks_core.unarchive.signature(),
             tasks_core.crop.signature(
                 kwargs={'bounding_box': [0, 20, 20, 0]}),
-            tasks_syntool.convert.signature(),
+            tasks_syntool.convert.signature(kwargs={'converter_options': None}),
             tasks_syntool.db_insert.signature(),
             tasks_core.remove_downloaded.signature())
 
