@@ -220,6 +220,35 @@ class SyntoolCleanupJob(Job):
         return ((parameters['criteria'],), {})
 
 
+class SyntoolCompareJob(Job):
+    """Job which generates comparison between Argo profiles and a 3D
+    product
+    """
+    class Meta:
+        proxy = True
+
+    @classmethod
+    def get_signature(cls, parameters):
+        return celery.chain(
+            tasks_syntool.compare_profiles.signature(),
+            tasks_syntool.db_insert.signature(),
+            tasks_core.remove_downloaded.signature()
+        )
+
+    @staticmethod
+    def check_parameters(parameters):
+        accepted_keys = ('dataset_id', 'profiles_lookups')
+        if not set(parameters).issubset(set(accepted_keys)):
+            raise ValidationError(
+                f"The convert action accepts only these parameters: {', '.join(accepted_keys)}")
+        return parameters
+
+    @staticmethod
+    def make_task_parameters(parameters):
+        return (((parameters['dataset_id'],),),
+                {'profiles_lookups': parameters['profiles_lookups']})
+
+
 class HarvestJob(Job):
     """Job which harvests metadata into the database"""
     class Meta:
