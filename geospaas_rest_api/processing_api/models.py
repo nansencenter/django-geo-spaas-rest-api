@@ -232,7 +232,6 @@ class SyntoolCompareJob(Job):
         return celery.chain(
             tasks_syntool.compare_profiles.signature(),
             tasks_syntool.db_insert.signature(),
-            tasks_core.remove_downloaded.signature()
         )
 
     @staticmethod
