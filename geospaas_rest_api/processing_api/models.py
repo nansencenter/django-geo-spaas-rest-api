@@ -236,7 +236,7 @@ class SyntoolCompareJob(Job):
 
     @staticmethod
     def check_parameters(parameters):
-        accepted_keys = ('dataset_id', 'profiles_lookups')
+        accepted_keys = ('model', 'profiles')
         if not set(parameters).issubset(set(accepted_keys)):
             raise ValidationError(
                 f"The convert action accepts only these parameters: {', '.join(accepted_keys)}")
@@ -244,8 +244,7 @@ class SyntoolCompareJob(Job):
 
     @staticmethod
     def make_task_parameters(parameters):
-        return (((parameters['dataset_id'],),),
-                {'profiles_lookups': parameters['profiles_lookups']})
+        return (((parameters['model'], parameters['profiles']),), {})
 
 
 class HarvestJob(Job):
