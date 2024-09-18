@@ -188,10 +188,16 @@ class DownloadJobTests(unittest.TestCase):
         with mock.patch('geospaas_rest_api.processing_api.models.tasks_core') as mock_tasks, \
              mock.patch('celery.chain') as mock_chain:
             _ = models.DownloadJob.get_signature({})
-        mock_chain.assert_called_with([
-            mock_tasks.download.signature.return_value,
-            mock_tasks.archive.signature.return_value,
-            mock_tasks.publish.signature.return_value,
+            _ = models.DownloadJob.get_signature({'publish': True})
+        mock_chain.assert_has_calls([
+            mock.call([
+                mock_tasks.download.signature.return_value,
+            ]),
+            mock.call([
+                mock_tasks.download.signature.return_value,
+                mock_tasks.archive.signature.return_value,
+                mock_tasks.publish.signature.return_value,
+            ]),
         ])
 
     def test_get_signature_cropping(self):
@@ -200,14 +206,21 @@ class DownloadJobTests(unittest.TestCase):
         with mock.patch('geospaas_rest_api.processing_api.models.tasks_core') as mock_tasks, \
              mock.patch('celery.chain') as mock_chain:
             _ = models.DownloadJob.get_signature({'bounding_box': [0, 20, 20, 0]})
-        mock_chain.assert_called_with(
-            [
+            _ = models.DownloadJob.get_signature({'bounding_box': [0, 20, 20, 0], 'publish': True})
+        mock_chain.assert_has_calls([
+            mock.call([
+                mock_tasks.download.signature.return_value,
+                mock_tasks.unarchive.signature.return_value,
+                mock_tasks.crop.signature.return_value,
+            ]),
+            mock.call([
                 mock_tasks.download.signature.return_value,
                 mock_tasks.unarchive.signature.return_value,
                 mock_tasks.crop.signature.return_value,
                 mock_tasks.archive.signature.return_value,
                 mock_tasks.publish.signature.return_value,
             ])
+        ])
         self.assertListEqual(
             mock_tasks.crop.signature.call_args[1]['kwargs']['bounding_box'],
             [0, 20, 20, 0])
