@@ -86,11 +86,11 @@ class DownloadJob(Job):
                 tasks_core.crop.signature(
                     kwargs={'bounding_box': parameters.get('bounding_box', None)}),
             ])
-
-        tasks.extend([
-            tasks_core.archive.signature(),
-            tasks_core.publish.signature(),
-        ])
+        if parameters.get('publish', False):
+            tasks.extend([
+                tasks_core.archive.signature(),
+                tasks_core.publish.signature(),
+            ])
         return celery.chain(tasks)
 
     @staticmethod
@@ -100,7 +100,7 @@ class DownloadJob(Job):
             - dataset_id: integer
             - bounding_box: 4-elements list
         """
-        if not set(parameters).issubset(set(('dataset_id', 'bounding_box'))):
+        if not set(parameters).issubset(set(('dataset_id', 'bounding_box', 'publish'))):
             raise ValidationError("The download action accepts only one parameter: 'dataset_id'")
         if not isinstance(parameters['dataset_id'], int):
             raise ValidationError("'dataset_id' must be an integer")
@@ -109,6 +109,8 @@ class DownloadJob(Job):
                      len(parameters['bounding_box']) == 4)):
             raise ValidationError("'bounding_box' must be a sequence in the following format: "
                                   "west, north, east, south")
+        if ('publish' in parameters and not isinstance(parameters['publish'], bool)):
+            raise ValidationError("'publish' must be a boolean")
         return parameters
 
     @staticmethod
