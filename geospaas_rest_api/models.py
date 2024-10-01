@@ -5,8 +5,9 @@ except ImportError:  # pragma: no cover
     geospaas_processing = None
 
 if geospaas_processing:
-    from .processing_api.models import (Job,
-                                        DownloadJob,
-                                        ConvertJob,
-                                        SyntoolCleanupJob,
-                                        HarvestJob)
+    from geospaas_rest_api.processing_api.models import (Job,
+                                                         DownloadJob,
+                                                         ConvertJob,
+                                                         SyntoolCleanupJob,
+                                                         SyntoolCompareJob,
+                                                         HarvestJob)

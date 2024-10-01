@@ -86,11 +86,11 @@ class DownloadJob(Job):
                 tasks_core.crop.signature(
                     kwargs={'bounding_box': parameters.get('bounding_box', None)}),
             ])
-
-        tasks.extend([
-            tasks_core.archive.signature(),
-            tasks_core.publish.signature(),
-        ])
+        if parameters.get('publish', False):
+            tasks.extend([
+                tasks_core.archive.signature(),
+                tasks_core.publish.signature(),
+            ])
         return celery.chain(tasks)
 
     @staticmethod
@@ -100,7 +100,7 @@ class DownloadJob(Job):
             - dataset_id: integer
             - bounding_box: 4-elements list
         """
-        if not set(parameters).issubset(set(('dataset_id', 'bounding_box'))):
+        if not set(parameters).issubset(set(('dataset_id', 'bounding_box', 'publish'))):
             raise ValidationError("The download action accepts only one parameter: 'dataset_id'")
         if not isinstance(parameters['dataset_id'], int):
             raise ValidationError("'dataset_id' must be an integer")
@@ -109,6 +109,8 @@ class DownloadJob(Job):
                      len(parameters['bounding_box']) == 4)):
             raise ValidationError("'bounding_box' must be a sequence in the following format: "
                                   "west, north, east, south")
+        if ('publish' in parameters and not isinstance(parameters['publish'], bool)):
+            raise ValidationError("'publish' must be a boolean")
         return parameters
 
     @staticmethod
@@ -218,6 +220,53 @@ class SyntoolCleanupJob(Job):
     @staticmethod
     def make_task_parameters(parameters):
         return ((parameters['criteria'],), {})
+
+
+class SyntoolCompareJob(Job):
+    """Job which generates comparison between Argo profiles and a 3D
+    product
+    """
+    class Meta:
+        proxy = True
+
+    @classmethod
+    def get_signature(cls, parameters):
+        return celery.chain(
+            tasks_syntool.compare_profiles.signature(),
+            tasks_syntool.db_insert.signature(),
+        )
+
+    @staticmethod
+    def check_parameters(parameters):
+        accepted_keys = ('model', 'profiles')
+        if not set(parameters) == set(accepted_keys):
+            raise ValidationError(
+                f"The convert action accepts only these parameters: {', '.join(accepted_keys)}")
+
+        if ((not isinstance(parameters['model'], Sequence)) or
+                len(parameters['model']) != 2 or
+                not isinstance(parameters['model'][0], int) or
+                not isinstance(parameters['model'][1], str)):
+            raise ValidationError("'model' must be a tuple (model_id, model_path)")
+
+        valid_profiles = True
+        if not isinstance(parameters['profiles'], Sequence):
+            valid_profiles = False
+        else:
+            for profile_tuple in parameters['profiles']:
+                if (not isinstance(profile_tuple, Sequence) or
+                        len(profile_tuple) != 2 or
+                        not isinstance(profile_tuple[0], int) or
+                        not isinstance(profile_tuple[1], str)):
+                    valid_profiles = False
+                    break
+        if not valid_profiles:
+            raise ValidationError("'profiles' must be a list of tuples (profile_id, profile_path)")
+        return parameters
+
+    @staticmethod
+    def make_task_parameters(parameters):
+        return (((parameters['model'], parameters['profiles']),), {})
 
 
 class HarvestJob(Job):
