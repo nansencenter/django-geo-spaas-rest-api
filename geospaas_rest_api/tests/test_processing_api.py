@@ -269,6 +269,15 @@ class DownloadJobTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             models.DownloadJob.check_parameters({'dataset_id': 1, 'bounding_box': [2]})
 
+    def test_check_parameters_wrong_publish_type(self):
+        """`check_parameters()` must raise an exception if the
+        'publish' value is of the wrong type
+        """
+        with self.assertRaises(ValidationError):
+            models.DownloadJob.check_parameters({'dataset_id': 1, 'publish': 'False'})
+        with self.assertRaises(ValidationError):
+            models.DownloadJob.check_parameters({'dataset_id': 1, 'publish': 1})
+
 
 class ConvertJobTests(unittest.TestCase):
     """Tests for the ConvertJob class"""
@@ -437,6 +446,97 @@ class SyntoolCleanupJobTests(unittest.TestCase):
         self.assertTupleEqual(
             models.SyntoolCleanupJob.make_task_parameters({'criteria': {'id': 539}}),
             (({'id': 539},), {}))
+
+
+class SyntoolCompareJobTests(unittest.TestCase):
+    """Tests for the SyntoolCompareJob class"""
+
+    def test_get_signature(self):
+        """Test getting the right signature"""
+        with mock.patch(
+                'geospaas_rest_api.processing_api.models.tasks_syntool') as mock_syntool_tasks, \
+             mock.patch('celery.chain') as mock_chain:
+            _ = models.SyntoolCompareJob.get_signature({})
+            mock_chain.assert_called_once_with(
+                mock_syntool_tasks.compare_profiles.signature.return_value,
+                mock_syntool_tasks.db_insert.signature.return_value,
+            )
+
+    def test_check_parameters_ok(self):
+        """Test that check_parameters() returns the parameters when
+        they are valid
+        """
+        self.assertDictEqual(
+            models.SyntoolCompareJob.check_parameters({
+                'model': (123, '/foo'),
+                'profiles': ((456, '/bar'), (789, '/baz'))
+            }),
+            {'model': (123, '/foo'), 'profiles': ((456, '/bar'), (789, '/baz'))})
+
+    def test_check_parameters_unknown(self):
+        """An error should be raised when an unknown parameter is given
+        """
+        with self.assertRaises(ValidationError):
+            models.SyntoolCompareJob.check_parameters({'foo': 'bar'})
+
+    def test_check_parameters_no_criteria(self):
+        """An error should be raised when the criteria parameter is
+        absent
+        """
+        with self.assertRaises(ValidationError):
+            models.SyntoolCompareJob.check_parameters({})
+
+    def test_check_parameters_wrong_type(self):
+        """An error should be raised when the parameters have the
+        wrong type
+        """
+        # model not a sequence
+        with self.assertRaises(ValidationError):
+            models.SyntoolCompareJob.check_parameters(
+                {'model': 123, 'profiles': ((123, '/bar'),)})
+        # wrong model ID type
+        with self.assertRaises(ValidationError):
+            models.SyntoolCompareJob.check_parameters(
+                {'model': ('123', '/foo'), 'profiles': ((123, '/bar'),)})
+        # wrong model path type
+        with self.assertRaises(ValidationError):
+            models.SyntoolCompareJob.check_parameters(
+                {'model': (123, True), 'profiles': ((123, '/bar'),)})
+        # profile not a sequence
+        with self.assertRaises(ValidationError):
+            models.SyntoolCompareJob.check_parameters({
+                'model': (123, '/foo'),
+                'profiles': 456
+            })
+        # profile not a sequence of couples
+        with self.assertRaises(ValidationError):
+            models.SyntoolCompareJob.check_parameters({
+                'model': (123, '/foo'),
+                'profiles': (456, 789)
+            })
+        # wrong profile ID type
+        with self.assertRaises(ValidationError):
+            models.SyntoolCompareJob.check_parameters({
+                'model': (123, '/foo'),
+                'profiles': (('456', '/bar'), (789, '/baz'))
+            })
+        # wrong profile path type
+        with self.assertRaises(ValidationError):
+            models.SyntoolCompareJob.check_parameters({
+                'model': (123, '/foo'),
+                'profiles': ((456, '/bar'), (789, False))
+            })
+
+    def test_make_task_parameters(self):
+        """Test that the right arguments are builts from the request
+        parameters
+        """
+        self.assertTupleEqual(
+            models.SyntoolCompareJob.make_task_parameters({
+                'model': (123, '/foo'),
+                'profiles': ((456, '/bar'), (789, '/baz'))
+            }),
+            ((((123, '/foo'), ((456, '/bar'), (789, '/baz'))),), {}))
 
 
 class HarvestJobTests(unittest.TestCase):
