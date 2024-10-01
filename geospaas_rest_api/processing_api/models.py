@@ -239,9 +239,29 @@ class SyntoolCompareJob(Job):
     @staticmethod
     def check_parameters(parameters):
         accepted_keys = ('model', 'profiles')
-        if not set(parameters).issubset(set(accepted_keys)):
+        if not set(parameters) == set(accepted_keys):
             raise ValidationError(
                 f"The convert action accepts only these parameters: {', '.join(accepted_keys)}")
+
+        if ((not isinstance(parameters['model'], Sequence)) or
+                len(parameters['model']) != 2 or
+                not isinstance(parameters['model'][0], int) or
+                not isinstance(parameters['model'][1], str)):
+            raise ValidationError("'model' must be a tuple (model_id, model_path)")
+
+        valid_profiles = True
+        if not isinstance(parameters['profiles'], Sequence):
+            valid_profiles = False
+        else:
+            for profile_tuple in parameters['profiles']:
+                if (not isinstance(profile_tuple, Sequence) or
+                        len(profile_tuple) != 2 or
+                        not isinstance(profile_tuple[0], int) or
+                        not isinstance(profile_tuple[1], str)):
+                    valid_profiles = False
+                    break
+        if not valid_profiles:
+            raise ValidationError("'profiles' must be a list of tuples (profile_id, profile_path)")
         return parameters
 
     @staticmethod
