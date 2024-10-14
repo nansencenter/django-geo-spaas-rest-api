@@ -234,6 +234,7 @@ class SyntoolCompareJob(Job):
         return celery.chain(
             tasks_syntool.compare_profiles.signature(),
             tasks_syntool.db_insert.signature(),
+            tasks_core.remove_downloaded.signature(),
         )
 
     @staticmethod
@@ -246,7 +247,8 @@ class SyntoolCompareJob(Job):
         if ((not isinstance(parameters['model'], Sequence)) or
                 len(parameters['model']) != 2 or
                 not isinstance(parameters['model'][0], int) or
-                not isinstance(parameters['model'][1], str)):
+                not isinstance(parameters['model'][1], Sequence) or
+                any((not isinstance(p, str) for p in parameters['model'][1]))):
             raise ValidationError("'model' must be a tuple (model_id, model_path)")
 
         valid_profiles = True
@@ -257,7 +259,8 @@ class SyntoolCompareJob(Job):
                 if (not isinstance(profile_tuple, Sequence) or
                         len(profile_tuple) != 2 or
                         not isinstance(profile_tuple[0], int) or
-                        not isinstance(profile_tuple[1], str)):
+                        not isinstance(profile_tuple[1], Sequence) or
+                        any((not isinstance(p, str) for p in profile_tuple[1]))):
                     valid_profiles = False
                     break
         if not valid_profiles:

@@ -455,11 +455,14 @@ class SyntoolCompareJobTests(unittest.TestCase):
         """Test getting the right signature"""
         with mock.patch(
                 'geospaas_rest_api.processing_api.models.tasks_syntool') as mock_syntool_tasks, \
+             mock.patch(
+                'geospaas_rest_api.processing_api.models.tasks_core') as mock_core_tasks, \
              mock.patch('celery.chain') as mock_chain:
             _ = models.SyntoolCompareJob.get_signature({})
             mock_chain.assert_called_once_with(
                 mock_syntool_tasks.compare_profiles.signature.return_value,
                 mock_syntool_tasks.db_insert.signature.return_value,
+                mock_core_tasks.remove_downloaded.signature.return_value,
             )
 
     def test_check_parameters_ok(self):
