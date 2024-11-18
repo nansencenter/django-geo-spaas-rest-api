@@ -317,3 +317,21 @@ class HarvestJob(Job):
     @staticmethod
     def make_task_parameters(parameters):
         return ((parameters['search_config_dict'],), {})
+
+
+class WorkdirCleanupJob(Job):
+    """Remove everything in the working directory"""
+    class Meta:
+        proxy = True
+
+    @classmethod
+    def get_signature(cls, parameters):
+        return tasks_core.cleanup_workdir.signature()
+
+    @staticmethod
+    def check_parameters(parameters):
+        return parameters
+
+    @staticmethod
+    def make_task_parameters(parameters):
+        return (tuple(), {})
