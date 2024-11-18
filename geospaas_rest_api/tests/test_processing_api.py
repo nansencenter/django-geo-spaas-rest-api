@@ -651,6 +651,29 @@ class HarvestJobTests(unittest.TestCase):
             (({'foo': 'bar'},), {}))
 
 
+class WorkdirCleanupJobTests(unittest.TestCase):
+    """Tests for WorkdirCleanupJob"""
+
+    def test_get_signature(self):
+        """The signature is the cleanup_workdir task"""
+        self.assertEqual(
+            models.WorkdirCleanupJob.get_signature({}),
+            tasks_core.cleanup_workdir.signature()
+        )
+
+    def test_check_parameters(self):
+        """No check needed"""
+        parameters = mock.Mock()
+        self.assertEqual(
+            models.WorkdirCleanupJob.check_parameters(parameters),
+            parameters)
+
+    def test_make_task_parameters(self):
+        """No parameters needed"""
+        self.assertTupleEqual(
+            models.WorkdirCleanupJob.make_task_parameters({}),
+            (tuple(), {}))
+
 class JobViewSetTests(django.test.TestCase):
     """Test jobs/ endpoints"""
 
