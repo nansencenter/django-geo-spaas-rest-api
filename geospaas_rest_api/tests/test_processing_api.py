@@ -295,7 +295,8 @@ class ConvertJobTests(unittest.TestCase):
         self.assertListEqual(
             raised.exception.detail,
             [ErrorDetail(string="The convert action accepts only these parameters: "
-                                "dataset_id, format, bounding_box, skip_check, converter_options",
+                                "dataset_id, format, bounding_box, skip_check, converter_options, "
+                                "remove_downloaded, ttl",
                          code='invalid')])
 
     def test_check_parameters_wrong_format(self):
@@ -314,7 +315,8 @@ class ConvertJobTests(unittest.TestCase):
         self.assertListEqual(
             raised.exception.detail,
             [ErrorDetail(string="The convert action accepts only these parameters: "
-                                "dataset_id, format, bounding_box, skip_check, converter_options",
+                                "dataset_id, format, bounding_box, skip_check, converter_options, "
+                                "remove_downloaded, ttl",
                          code='invalid')])
 
     def test_check_parameters_wrong_type_for_dataset_id(self):
@@ -355,7 +357,7 @@ class ConvertJobTests(unittest.TestCase):
             tasks_core.unarchive.signature(),
             tasks_core.crop.signature(
                 kwargs={'bounding_box': [0, 20, 20, 0]}),
-            tasks_syntool.convert.signature(kwargs={'converter_options': None}),
+            tasks_syntool.convert.signature(kwargs={'converter_options': None, 'ttl': None}),
             tasks_syntool.db_insert.signature(),
             tasks_core.remove_downloaded.signature())
 
@@ -458,11 +460,26 @@ class SyntoolCompareJobTests(unittest.TestCase):
                 'geospaas_rest_api.processing_api.models.tasks_core') as mock_core_tasks, \
              mock.patch('celery.chain') as mock_chain:
             _ = models.SyntoolCompareJob.get_signature({})
-            mock_chain.assert_called_once_with(
+            mock_chain.assert_called_once_with([
                 mock_syntool_tasks.compare_profiles.signature.return_value,
                 mock_syntool_tasks.db_insert.signature.return_value,
                 mock_core_tasks.remove_downloaded.signature.return_value,
-            )
+            ])
+
+    def test_get_signature_no_remove(self):
+        """Test that remove_downloaded is not added to the signature if
+        the parameter is False
+        """
+        with mock.patch(
+                'geospaas_rest_api.processing_api.models.tasks_syntool') as mock_syntool_tasks, \
+             mock.patch(
+                'geospaas_rest_api.processing_api.models.tasks_core') as mock_core_tasks, \
+             mock.patch('celery.chain') as mock_chain:
+            _ = models.SyntoolCompareJob.get_signature({'remove_downloaded': False})
+            mock_chain.assert_called_once_with([
+                mock_syntool_tasks.compare_profiles.signature.return_value,
+                mock_syntool_tasks.db_insert.signature.return_value,
+            ])
 
     def test_check_parameters_ok(self):
         """Test that check_parameters() returns the parameters when
@@ -873,13 +890,15 @@ class ProcessingResultsViewSetTests(django.test.TestCase):
                     "dataset": 1,
                     "path": "ingested/product_name/granule_name_1/",
                     "type": "syntool",
-                    "created": "2023-10-25T15:38:47Z"
+                    "created": "2023-10-25T15:38:47Z",
+                    "ttl": None,
                 }, {
                     "id": 2,
                     "dataset": 2,
                     "path": "ingested/product_name/granule_name_2/",
                     "type": "syntool",
-                    "created": "2023-10-26T09:10:19Z"
+                    "created": "2023-10-26T09:10:19Z",
+                    "ttl": None,
                 }
             ]
         }
@@ -893,5 +912,6 @@ class ProcessingResultsViewSetTests(django.test.TestCase):
             "dataset": 1,
             "path": "ingested/product_name/granule_name_1/",
             "type": "syntool",
-            "created": "2023-10-25T15:38:47Z"
+            "created": "2023-10-25T15:38:47Z",
+            "ttl": None,
         })
