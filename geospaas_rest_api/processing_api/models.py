@@ -138,7 +138,7 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
                 tasks_core.archive.signature(),
                 tasks_core.publish.signature())
         elif conversion_format == 'syntool':
-            syntool_chain = celery.chain(
+            syntool_tasks = [
                 tasks_core.download.signature(),
                 tasks_core.unarchive.signature(),
                 tasks_core.crop.signature(
@@ -146,7 +146,11 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
                 tasks_syntool.convert.signature(
                     kwargs={'converter_options': parameters.get('converter_options', None)}),
                 tasks_syntool.db_insert.signature(),
-                tasks_core.remove_downloaded.signature())
+            ]
+            if parameters.get('remove_downloaded', True):
+                syntool_tasks.append(tasks_core.remove_downloaded.signature())
+            syntool_chain = celery.chain(syntool_tasks)
+
             if parameters.pop('skip_check', False):
                 return syntool_chain
             else:
