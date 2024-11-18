@@ -201,7 +201,7 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
 
         if ('ttl' in parameters and not (
                 parameters['ttl'] is None or isinstance(parameters['ttl'], dict))):
-            raise ValidationError("'converter_options' should be a dictionary or None")
+            raise ValidationError("'ttl' should be a dictionary or None")
 
         return parameters
 
