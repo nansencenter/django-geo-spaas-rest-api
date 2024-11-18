@@ -350,6 +350,26 @@ class ConvertJobTests(unittest.TestCase):
             models.ConvertJob.check_parameters(
                 {'dataset_id': 1, 'format': 'idf', 'converter_options': '2'})
 
+    def test_check_parameters_ttl(self):
+        """`check_parameters()` must not raise an exception if 'ttl' is
+        a dict or None
+        """
+        self.assertEqual(
+            models.ConvertJob.check_parameters(
+                {'dataset_id': 1, 'format': 'syntool', 'ttl': {'days': 2}}),
+            {'dataset_id': 1, 'format': 'syntool', 'ttl': {'days': 2}})
+        self.assertEqual(
+            models.ConvertJob.check_parameters(
+                {'dataset_id': 1, 'format': 'syntool', 'ttl': None}),
+            {'dataset_id': 1, 'format': 'syntool', 'ttl': None})
+
+    def test_check_parameters_wrong_ttl_type(self):
+        """`check_parameters()` must raise an exception if the 'ttl'
+        value is of the wrong type"""
+        with self.assertRaises(ValidationError):
+            models.ConvertJob.check_parameters(
+                {'dataset_id': 1, 'format': 'syntool', 'ttl': 2})
+
     def test_get_signature_syntool(self):
         """Test the right signature is returned"""
         base_chain = celery.chain(
@@ -488,9 +508,35 @@ class SyntoolCompareJobTests(unittest.TestCase):
         self.assertDictEqual(
             models.SyntoolCompareJob.check_parameters({
                 'model': (123, '/foo'),
-                'profiles': ((456, '/bar'), (789, '/baz'))
+                'profiles': ((456, '/bar'), (789, '/baz')),
             }),
             {'model': (123, '/foo'), 'profiles': ((456, '/bar'), (789, '/baz'))})
+
+    def test_check_parameters_ttl(self):
+        """ttl must be a dict or None"""
+        self.assertDictEqual(
+            models.SyntoolCompareJob.check_parameters({
+                'model': (123, '/foo'),
+                'profiles': ((456, '/bar'), (789, '/baz')),
+                'ttl': {'days': 2},
+            }),
+            {
+                'model': (123, '/foo'),
+                'profiles': ((456, '/bar'), (789, '/baz')),
+                'ttl': {'days': 2},
+            })
+        self.assertDictEqual(
+            models.SyntoolCompareJob.check_parameters({
+                'model': (123, '/foo'),
+                'profiles': ((456, '/bar'), (789, '/baz')),
+                'ttl': None,
+            }),
+            {
+                'model': (123, '/foo'),
+                'profiles': ((456, '/bar'), (789, '/baz')),
+                'ttl': None,
+            })
+
 
     def test_check_parameters_unknown(self):
         """An error should be raised when an unknown parameter is given
@@ -544,6 +590,13 @@ class SyntoolCompareJobTests(unittest.TestCase):
             models.SyntoolCompareJob.check_parameters({
                 'model': (123, '/foo'),
                 'profiles': ((456, '/bar'), (789, False))
+            })
+        # wrong ttl type
+        with self.assertRaises(ValidationError):
+            models.SyntoolCompareJob.check_parameters({
+                'model': (123, '/foo'),
+                'profiles': ((456, '/bar'), (789, '/baz')),
+                'ttl': 2,
             })
 
     def test_make_task_parameters(self):
