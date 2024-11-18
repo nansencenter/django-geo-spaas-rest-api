@@ -350,7 +350,6 @@ class ConvertJobTests(unittest.TestCase):
 
     def test_get_signature_syntool(self):
         """Test the right signature is returned"""
-        self.maxDiff = None
         base_chain = celery.chain(
             tasks_core.download.signature(),
             tasks_core.unarchive.signature(),
