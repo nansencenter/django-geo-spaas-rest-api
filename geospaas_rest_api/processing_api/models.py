@@ -250,7 +250,7 @@ class SyntoolCompareJob(Job):
     @classmethod
     def get_signature(cls, parameters):
         tasks = [
-            tasks_syntool.compare_profiles.signature(),
+            tasks_syntool.compare_profiles.signature(kwargs={'ttl': parameters.get('ttl', None)}),
             tasks_syntool.db_insert.signature(),
         ]
         if parameters.get('remove_downloaded', True):
@@ -259,7 +259,7 @@ class SyntoolCompareJob(Job):
 
     @staticmethod
     def check_parameters(parameters):
-        accepted_keys = ('model', 'profiles')
+        accepted_keys = ('model', 'profiles', 'ttl')
         if not set(parameters) == set(accepted_keys):
             raise ValidationError(
                 f"The convert action accepts only these parameters: {', '.join(accepted_keys)}")
@@ -285,6 +285,11 @@ class SyntoolCompareJob(Job):
                     break
         if not valid_profiles:
             raise ValidationError("'profiles' must be a list of tuples (profile_id, profile_path)")
+
+        if ('ttl' in parameters and not (
+                parameters['ttl'] is None or isinstance(parameters['ttl'], dict))):
+            raise ValidationError("'converter_options' should be a dictionary or None")
+
         return parameters
 
     @staticmethod
