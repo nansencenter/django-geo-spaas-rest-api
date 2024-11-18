@@ -144,7 +144,10 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
                 tasks_core.crop.signature(
                     kwargs={'bounding_box': parameters.get('bounding_box', None)}),
                 tasks_syntool.convert.signature(
-                    kwargs={'converter_options': parameters.get('converter_options', None)}),
+                    kwargs={
+                        'converter_options': parameters.get('converter_options', None),
+                        'ttl': parameters.get('ttl', None),
+                    }),
                 tasks_syntool.db_insert.signature(),
             ]
             if parameters.get('remove_downloaded', True):
@@ -166,7 +169,14 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
             - bounding_box: 4-elements list
             - format: value in ['idf']
         """
-        accepted_keys = ('dataset_id', 'format', 'bounding_box', 'skip_check', 'converter_options')
+        accepted_keys = (
+            'dataset_id',
+            'format',
+            'bounding_box',
+            'skip_check',
+            'converter_options',
+            'remove_downloaded',
+            'ttl')
         if not set(parameters).issubset(set(accepted_keys)):
             raise ValidationError(
                 f"The convert action accepts only these parameters: {', '.join(accepted_keys)}")
@@ -188,6 +198,10 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
         if ('converter_options' in parameters and
                 not isinstance(parameters['converter_options'], dict)):
             raise ValidationError("'converter_options' should be a dictionary")
+
+        if ('ttl' in parameters and not (
+                parameters['ttl'] is None or isinstance(parameters['ttl'], dict))):
+            raise ValidationError("'converter_options' should be a dictionary or None")
 
         return parameters
 
