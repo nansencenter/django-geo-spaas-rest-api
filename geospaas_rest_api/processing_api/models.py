@@ -249,11 +249,13 @@ class SyntoolCompareJob(Job):
 
     @classmethod
     def get_signature(cls, parameters):
-        return celery.chain(
+        tasks = [
             tasks_syntool.compare_profiles.signature(),
             tasks_syntool.db_insert.signature(),
-            tasks_core.remove_downloaded.signature(),
-        )
+        ]
+        if parameters.get('remove_downloaded', True):
+            tasks.append(tasks_core.remove_downloaded.signature())
+        return celery.chain(tasks)
 
     @staticmethod
     def check_parameters(parameters):
