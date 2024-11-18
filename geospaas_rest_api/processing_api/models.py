@@ -260,7 +260,7 @@ class SyntoolCompareJob(Job):
     @staticmethod
     def check_parameters(parameters):
         accepted_keys = ('model', 'profiles', 'ttl')
-        if not set(parameters) == set(accepted_keys):
+        if not set(parameters).issubset(accepted_keys):
             raise ValidationError(
                 f"The convert action accepts only these parameters: {', '.join(accepted_keys)}")
 
