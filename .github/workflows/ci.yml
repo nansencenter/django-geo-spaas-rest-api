@@ -7,7 +7,7 @@ on:
     types: [prereleased, released]
 env:
   TESTING_IMAGE_NAME: geospaas_rest_api_tests
-  GEOSPAAS_PROCESSING_VERSION: 3.1.0
+  GEOSPAAS_PROCESSING_VERSION: 3.8.0
   GEOSPAAS_HARVESTING_VERSION: 3.8.0
   METANORM_VERSION: 4.1.2
 jobs:
