@@ -138,15 +138,22 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
                 tasks_core.archive.signature(),
                 tasks_core.publish.signature())
         elif conversion_format == 'syntool':
-            syntool_chain = celery.chain(
+            syntool_tasks = [
                 tasks_core.download.signature(),
                 tasks_core.unarchive.signature(),
                 tasks_core.crop.signature(
                     kwargs={'bounding_box': parameters.get('bounding_box', None)}),
                 tasks_syntool.convert.signature(
-                    kwargs={'converter_options': parameters.get('converter_options', None)}),
+                    kwargs={
+                        'converter_options': parameters.get('converter_options', None),
+                        'ttl': parameters.get('ttl', None),
+                    }),
                 tasks_syntool.db_insert.signature(),
-                tasks_core.remove_downloaded.signature())
+            ]
+            if parameters.get('remove_downloaded', True):
+                syntool_tasks.append(tasks_core.remove_downloaded.signature())
+            syntool_chain = celery.chain(syntool_tasks)
+
             if parameters.pop('skip_check', False):
                 return syntool_chain
             else:
@@ -162,7 +169,14 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
             - bounding_box: 4-elements list
             - format: value in ['idf']
         """
-        accepted_keys = ('dataset_id', 'format', 'bounding_box', 'skip_check', 'converter_options')
+        accepted_keys = (
+            'dataset_id',
+            'format',
+            'bounding_box',
+            'skip_check',
+            'converter_options',
+            'remove_downloaded',
+            'ttl')
         if not set(parameters).issubset(set(accepted_keys)):
             raise ValidationError(
                 f"The convert action accepts only these parameters: {', '.join(accepted_keys)}")
@@ -184,6 +198,10 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
         if ('converter_options' in parameters and
                 not isinstance(parameters['converter_options'], dict)):
             raise ValidationError("'converter_options' should be a dictionary")
+
+        if ('ttl' in parameters and not (
+                parameters['ttl'] is None or isinstance(parameters['ttl'], dict))):
+            raise ValidationError("'ttl' should be a dictionary or None")
 
         return parameters
 
@@ -231,18 +249,25 @@ class SyntoolCompareJob(Job):
 
     @classmethod
     def get_signature(cls, parameters):
-        return celery.chain(
-            tasks_syntool.compare_profiles.signature(),
+        tasks = [
+            tasks_syntool.compare_profiles.signature(kwargs={'ttl': parameters.get('ttl', None)}),
             tasks_syntool.db_insert.signature(),
-            tasks_core.remove_downloaded.signature(),
-        )
+        ]
+        if parameters.get('remove_downloaded', True):
+            tasks.append(tasks_core.remove_downloaded.signature())
+        return celery.chain(tasks)
 
     @staticmethod
     def check_parameters(parameters):
-        accepted_keys = ('model', 'profiles')
-        if not set(parameters) == set(accepted_keys):
+        required_keys = ('model', 'profiles')
+        accepted_keys = (*required_keys, 'ttl')
+        if not set(parameters).issubset(accepted_keys):
             raise ValidationError(
-                f"The convert action accepts only these parameters: {', '.join(accepted_keys)}")
+                f"The compare action accepts only these parameters: {', '.join(accepted_keys)}")
+
+        if not set(required_keys).issubset(parameters):
+            raise ValidationError(
+                f"The following parameters are required for the compare action: {required_keys}")
 
         if ((not isinstance(parameters['model'], Sequence)) or
                 len(parameters['model']) != 2 or
@@ -265,6 +290,11 @@ class SyntoolCompareJob(Job):
                     break
         if not valid_profiles:
             raise ValidationError("'profiles' must be a list of tuples (profile_id, profile_path)")
+
+        if ('ttl' in parameters and not (
+                parameters['ttl'] is None or isinstance(parameters['ttl'], dict))):
+            raise ValidationError("'converter_options' should be a dictionary or None")
+
         return parameters
 
     @staticmethod
@@ -292,3 +322,21 @@ class HarvestJob(Job):
     @staticmethod
     def make_task_parameters(parameters):
         return ((parameters['search_config_dict'],), {})
+
+
+class WorkdirCleanupJob(Job):
+    """Remove everything in the working directory"""
+    class Meta:
+        proxy = True
+
+    @classmethod
+    def get_signature(cls, parameters):
+        return tasks_core.cleanup_workdir.signature()
+
+    @staticmethod
+    def check_parameters(parameters):
+        return parameters
+
+    @staticmethod
+    def make_task_parameters(parameters):
+        return (tuple(), {})

@@ -295,7 +295,8 @@ class ConvertJobTests(unittest.TestCase):
         self.assertListEqual(
             raised.exception.detail,
             [ErrorDetail(string="The convert action accepts only these parameters: "
-                                "dataset_id, format, bounding_box, skip_check, converter_options",
+                                "dataset_id, format, bounding_box, skip_check, converter_options, "
+                                "remove_downloaded, ttl",
                          code='invalid')])
 
     def test_check_parameters_wrong_format(self):
@@ -314,7 +315,8 @@ class ConvertJobTests(unittest.TestCase):
         self.assertListEqual(
             raised.exception.detail,
             [ErrorDetail(string="The convert action accepts only these parameters: "
-                                "dataset_id, format, bounding_box, skip_check, converter_options",
+                                "dataset_id, format, bounding_box, skip_check, converter_options, "
+                                "remove_downloaded, ttl",
                          code='invalid')])
 
     def test_check_parameters_wrong_type_for_dataset_id(self):
@@ -348,15 +350,34 @@ class ConvertJobTests(unittest.TestCase):
             models.ConvertJob.check_parameters(
                 {'dataset_id': 1, 'format': 'idf', 'converter_options': '2'})
 
+    def test_check_parameters_ttl(self):
+        """`check_parameters()` must not raise an exception if 'ttl' is
+        a dict or None
+        """
+        self.assertEqual(
+            models.ConvertJob.check_parameters(
+                {'dataset_id': 1, 'format': 'syntool', 'ttl': {'days': 2}}),
+            {'dataset_id': 1, 'format': 'syntool', 'ttl': {'days': 2}})
+        self.assertEqual(
+            models.ConvertJob.check_parameters(
+                {'dataset_id': 1, 'format': 'syntool', 'ttl': None}),
+            {'dataset_id': 1, 'format': 'syntool', 'ttl': None})
+
+    def test_check_parameters_wrong_ttl_type(self):
+        """`check_parameters()` must raise an exception if the 'ttl'
+        value is of the wrong type"""
+        with self.assertRaises(ValidationError):
+            models.ConvertJob.check_parameters(
+                {'dataset_id': 1, 'format': 'syntool', 'ttl': 2})
+
     def test_get_signature_syntool(self):
         """Test the right signature is returned"""
-        self.maxDiff = None
         base_chain = celery.chain(
             tasks_core.download.signature(),
             tasks_core.unarchive.signature(),
             tasks_core.crop.signature(
                 kwargs={'bounding_box': [0, 20, 20, 0]}),
-            tasks_syntool.convert.signature(kwargs={'converter_options': None}),
+            tasks_syntool.convert.signature(kwargs={'converter_options': None, 'ttl': None}),
             tasks_syntool.db_insert.signature(),
             tasks_core.remove_downloaded.signature())
 
@@ -459,11 +480,26 @@ class SyntoolCompareJobTests(unittest.TestCase):
                 'geospaas_rest_api.processing_api.models.tasks_core') as mock_core_tasks, \
              mock.patch('celery.chain') as mock_chain:
             _ = models.SyntoolCompareJob.get_signature({})
-            mock_chain.assert_called_once_with(
+            mock_chain.assert_called_once_with([
                 mock_syntool_tasks.compare_profiles.signature.return_value,
                 mock_syntool_tasks.db_insert.signature.return_value,
                 mock_core_tasks.remove_downloaded.signature.return_value,
-            )
+            ])
+
+    def test_get_signature_no_remove(self):
+        """Test that remove_downloaded is not added to the signature if
+        the parameter is False
+        """
+        with mock.patch(
+                'geospaas_rest_api.processing_api.models.tasks_syntool') as mock_syntool_tasks, \
+             mock.patch(
+                'geospaas_rest_api.processing_api.models.tasks_core') as mock_core_tasks, \
+             mock.patch('celery.chain') as mock_chain:
+            _ = models.SyntoolCompareJob.get_signature({'remove_downloaded': False})
+            mock_chain.assert_called_once_with([
+                mock_syntool_tasks.compare_profiles.signature.return_value,
+                mock_syntool_tasks.db_insert.signature.return_value,
+            ])
 
     def test_check_parameters_ok(self):
         """Test that check_parameters() returns the parameters when
@@ -472,9 +508,35 @@ class SyntoolCompareJobTests(unittest.TestCase):
         self.assertDictEqual(
             models.SyntoolCompareJob.check_parameters({
                 'model': (123, '/foo'),
-                'profiles': ((456, '/bar'), (789, '/baz'))
+                'profiles': ((456, '/bar'), (789, '/baz')),
             }),
             {'model': (123, '/foo'), 'profiles': ((456, '/bar'), (789, '/baz'))})
+
+    def test_check_parameters_ttl(self):
+        """ttl must be a dict or None"""
+        self.assertDictEqual(
+            models.SyntoolCompareJob.check_parameters({
+                'model': (123, '/foo'),
+                'profiles': ((456, '/bar'), (789, '/baz')),
+                'ttl': {'days': 2},
+            }),
+            {
+                'model': (123, '/foo'),
+                'profiles': ((456, '/bar'), (789, '/baz')),
+                'ttl': {'days': 2},
+            })
+        self.assertDictEqual(
+            models.SyntoolCompareJob.check_parameters({
+                'model': (123, '/foo'),
+                'profiles': ((456, '/bar'), (789, '/baz')),
+                'ttl': None,
+            }),
+            {
+                'model': (123, '/foo'),
+                'profiles': ((456, '/bar'), (789, '/baz')),
+                'ttl': None,
+            })
+
 
     def test_check_parameters_unknown(self):
         """An error should be raised when an unknown parameter is given
@@ -529,6 +591,13 @@ class SyntoolCompareJobTests(unittest.TestCase):
                 'model': (123, '/foo'),
                 'profiles': ((456, '/bar'), (789, False))
             })
+        # wrong ttl type
+        with self.assertRaises(ValidationError):
+            models.SyntoolCompareJob.check_parameters({
+                'model': (123, '/foo'),
+                'profiles': ((456, '/bar'), (789, '/baz')),
+                'ttl': 2,
+            })
 
     def test_make_task_parameters(self):
         """Test that the right arguments are builts from the request
@@ -581,6 +650,29 @@ class HarvestJobTests(unittest.TestCase):
             models.HarvestJob.make_task_parameters({'search_config_dict': {'foo': 'bar'}}),
             (({'foo': 'bar'},), {}))
 
+
+class WorkdirCleanupJobTests(unittest.TestCase):
+    """Tests for WorkdirCleanupJob"""
+
+    def test_get_signature(self):
+        """The signature is the cleanup_workdir task"""
+        self.assertEqual(
+            models.WorkdirCleanupJob.get_signature({}),
+            tasks_core.cleanup_workdir.signature()
+        )
+
+    def test_check_parameters(self):
+        """No check needed"""
+        parameters = mock.Mock()
+        self.assertEqual(
+            models.WorkdirCleanupJob.check_parameters(parameters),
+            parameters)
+
+    def test_make_task_parameters(self):
+        """No parameters needed"""
+        self.assertTupleEqual(
+            models.WorkdirCleanupJob.make_task_parameters({}),
+            (tuple(), {}))
 
 class JobViewSetTests(django.test.TestCase):
     """Test jobs/ endpoints"""
@@ -874,13 +966,15 @@ class ProcessingResultsViewSetTests(django.test.TestCase):
                     "dataset": 1,
                     "path": "ingested/product_name/granule_name_1/",
                     "type": "syntool",
-                    "created": "2023-10-25T15:38:47Z"
+                    "created": "2023-10-25T15:38:47Z",
+                    "ttl": None,
                 }, {
                     "id": 2,
                     "dataset": 2,
                     "path": "ingested/product_name/granule_name_2/",
                     "type": "syntool",
-                    "created": "2023-10-26T09:10:19Z"
+                    "created": "2023-10-26T09:10:19Z",
+                    "ttl": None,
                 }
             ]
         }
@@ -894,5 +988,6 @@ class ProcessingResultsViewSetTests(django.test.TestCase):
             "dataset": 1,
             "path": "ingested/product_name/granule_name_1/",
             "type": "syntool",
-            "created": "2023-10-25T15:38:47Z"
+            "created": "2023-10-25T15:38:47Z",
+            "ttl": None,
         })

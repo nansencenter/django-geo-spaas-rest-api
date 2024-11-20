@@ -15,6 +15,7 @@ class JobSerializer(rest_framework.serializers.Serializer):
         'harvest': models.HarvestJob,
         'syntool_cleanup': models.SyntoolCleanupJob,
         'compare_profiles': models.SyntoolCompareJob,
+        'workdir_cleanup': models.WorkdirCleanupJob,
     }
 
     # Actual Job fields
@@ -29,6 +30,7 @@ class JobSerializer(rest_framework.serializers.Serializer):
             'convert',
             'harvest',
             'syntool_cleanup',
+            'workdir_cleanup',
             'compare_profiles',
         ],
         required=True, write_only=True,

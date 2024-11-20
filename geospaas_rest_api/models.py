@@ -10,4 +10,5 @@ if geospaas_processing:
                                                          ConvertJob,
                                                          SyntoolCleanupJob,
                                                          SyntoolCompareJob,
-                                                         HarvestJob)
+                                                         HarvestJob,
+                                                         WorkdirCleanupJob)
