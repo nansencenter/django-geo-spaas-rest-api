@@ -143,7 +143,7 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
         if conversion_format == 'idf':
             return celery.chain(
                 tasks_core.download.signature(),
-                tasks_core.copy.signature(copy_to=parameters.get('copy_to', None)),
+                tasks_core.copy.signature(kwargs={'copy_to': parameters.get('copy_to', None)}),
                 tasks_core.unarchive.signature(),
                 tasks_core.crop.signature(
                     kwargs={'bounding_box': parameters.get('bounding_box', None)}),
