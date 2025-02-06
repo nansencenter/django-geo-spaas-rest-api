@@ -14,6 +14,9 @@ class Job(models.Model):
     """Base model that gives access to the status and result of
     running one or more Celery tasks.
     """
+    class Meta:
+        app_label = 'geospaas_rest_api'
+
     # Database fields
     task_id = models.CharField(
         unique=True, max_length=255,
@@ -73,6 +76,7 @@ class DownloadJob(Job):
     """
     class Meta:
         proxy = True
+        app_label = 'geospaas_rest_api'
 
     @classmethod
     def get_signature(cls, parameters):
@@ -124,6 +128,7 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
 
     class Meta:
         proxy = True
+        app_label = 'geospaas_rest_api'
 
     @classmethod
     def get_signature(cls, parameters):
@@ -214,6 +219,7 @@ class SyntoolCleanupJob(Job):
     """Job which cleans up ingested files older than a date"""
     class Meta:
         proxy = True
+        app_label = 'geospaas_rest_api'
 
     @classmethod
     def get_signature(cls, parameters):
@@ -246,6 +252,7 @@ class SyntoolCompareJob(Job):
     """
     class Meta:
         proxy = True
+        app_label = 'geospaas_rest_api'
 
     @classmethod
     def get_signature(cls, parameters):
@@ -306,6 +313,7 @@ class HarvestJob(Job):
     """Job which harvests metadata into the database"""
     class Meta:
         proxy = True
+        app_label = 'geospaas_rest_api'
 
     @classmethod
     def get_signature(cls, parameters):
@@ -328,6 +336,7 @@ class WorkdirCleanupJob(Job):
     """Remove everything in the working directory"""
     class Meta:
         proxy = True
+        app_label = 'geospaas_rest_api'
 
     @classmethod
     def get_signature(cls, parameters):
