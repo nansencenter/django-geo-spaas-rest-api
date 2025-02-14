@@ -14,6 +14,9 @@ class Job(models.Model):
     """Base model that gives access to the status and result of
     running one or more Celery tasks.
     """
+    class Meta:
+        app_label = 'geospaas_rest_api'
+
     # Database fields
     task_id = models.CharField(
         unique=True, max_length=255,
@@ -73,10 +76,14 @@ class DownloadJob(Job):
     """
     class Meta:
         proxy = True
+        app_label = 'geospaas_rest_api'
 
     @classmethod
     def get_signature(cls, parameters):
-        tasks = [tasks_core.download.signature()]
+        tasks = [
+            tasks_core.download.signature(),
+            tasks_core.copy.signature(kwargs={'copy_to': parameters.get('copy_to', None)}),
+        ]
 
         # only unarchive if cropping is needed
         bounding_box = parameters.get('bounding_box', None)
@@ -100,8 +107,10 @@ class DownloadJob(Job):
             - dataset_id: integer
             - bounding_box: 4-elements list
         """
-        if not set(parameters).issubset(set(('dataset_id', 'bounding_box', 'publish'))):
-            raise ValidationError("The download action accepts only one parameter: 'dataset_id'")
+        allowed_parameters = ('dataset_id', 'bounding_box', 'publish', 'copy_to')
+        if not set(parameters).issubset(set(allowed_parameters)):
+            raise ValidationError(
+                f"The download action accepts only the following parameters: {allowed_parameters}")
         if not isinstance(parameters['dataset_id'], int):
             raise ValidationError("'dataset_id' must be an integer")
         if ('bounding_box' in parameters and
@@ -111,6 +120,8 @@ class DownloadJob(Job):
                                   "west, north, east, south")
         if ('publish' in parameters and not isinstance(parameters['publish'], bool)):
             raise ValidationError("'publish' must be a boolean")
+        if 'copy_to' in parameters and not isinstance(parameters['copy_to'], str):
+            raise ValidationError("'copy_to' must be a string")
         return parameters
 
     @staticmethod
@@ -124,6 +135,7 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
 
     class Meta:
         proxy = True
+        app_label = 'geospaas_rest_api'
 
     @classmethod
     def get_signature(cls, parameters):
@@ -131,6 +143,7 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
         if conversion_format == 'idf':
             return celery.chain(
                 tasks_core.download.signature(),
+                tasks_core.copy.signature(kwargs={'copy_to': parameters.get('copy_to', None)}),
                 tasks_core.unarchive.signature(),
                 tasks_core.crop.signature(
                     kwargs={'bounding_box': parameters.get('bounding_box', None)}),
@@ -140,6 +153,7 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
         elif conversion_format == 'syntool':
             syntool_tasks = [
                 tasks_core.download.signature(),
+                tasks_core.copy.signature(kwargs={'copy_to': parameters.get('copy_to', None)}),
                 tasks_core.unarchive.signature(),
                 tasks_core.crop.signature(
                     kwargs={'bounding_box': parameters.get('bounding_box', None)}),
@@ -176,7 +190,8 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
             'skip_check',
             'converter_options',
             'remove_downloaded',
-            'ttl')
+            'ttl',
+            'copy_to')
         if not set(parameters).issubset(set(accepted_keys)):
             raise ValidationError(
                 f"The convert action accepts only these parameters: {', '.join(accepted_keys)}")
@@ -203,6 +218,9 @@ class ConvertJob(Job):  # pylint: disable=abstract-method
                 parameters['ttl'] is None or isinstance(parameters['ttl'], dict))):
             raise ValidationError("'ttl' should be a dictionary or None")
 
+        if 'copy_to' in parameters and not isinstance(parameters['copy_to'], str):
+            raise ValidationError("'copy_to' must be a string")
+
         return parameters
 
     @staticmethod
@@ -214,6 +232,7 @@ class SyntoolCleanupJob(Job):
     """Job which cleans up ingested files older than a date"""
     class Meta:
         proxy = True
+        app_label = 'geospaas_rest_api'
 
     @classmethod
     def get_signature(cls, parameters):
@@ -246,6 +265,7 @@ class SyntoolCompareJob(Job):
     """
     class Meta:
         proxy = True
+        app_label = 'geospaas_rest_api'
 
     @classmethod
     def get_signature(cls, parameters):
@@ -306,6 +326,7 @@ class HarvestJob(Job):
     """Job which harvests metadata into the database"""
     class Meta:
         proxy = True
+        app_label = 'geospaas_rest_api'
 
     @classmethod
     def get_signature(cls, parameters):
@@ -328,6 +349,7 @@ class WorkdirCleanupJob(Job):
     """Remove everything in the working directory"""
     class Meta:
         proxy = True
+        app_label = 'geospaas_rest_api'
 
     @classmethod
     def get_signature(cls, parameters):

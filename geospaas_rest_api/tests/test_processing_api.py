@@ -192,9 +192,11 @@ class DownloadJobTests(unittest.TestCase):
         mock_chain.assert_has_calls([
             mock.call([
                 mock_tasks.download.signature.return_value,
+                mock_tasks.copy.signature.return_value,
             ]),
             mock.call([
                 mock_tasks.download.signature.return_value,
+                mock_tasks.copy.signature.return_value,
                 mock_tasks.archive.signature.return_value,
                 mock_tasks.publish.signature.return_value,
             ]),
@@ -210,11 +212,13 @@ class DownloadJobTests(unittest.TestCase):
         mock_chain.assert_has_calls([
             mock.call([
                 mock_tasks.download.signature.return_value,
+                mock_tasks.copy.signature.return_value,
                 mock_tasks.unarchive.signature.return_value,
                 mock_tasks.crop.signature.return_value,
             ]),
             mock.call([
                 mock_tasks.download.signature.return_value,
+                mock_tasks.copy.signature.return_value,
                 mock_tasks.unarchive.signature.return_value,
                 mock_tasks.crop.signature.return_value,
                 mock_tasks.archive.signature.return_value,
@@ -237,8 +241,10 @@ class DownloadJobTests(unittest.TestCase):
             models.DownloadJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(string="The download action accepts only one parameter: 'dataset_id'",
-                         code='invalid')])
+            [ErrorDetail(
+                string="The download action accepts only the following parameters:"
+                       " ('dataset_id', 'bounding_box', 'publish', 'copy_to')",
+                code='invalid')])
 
     def test_check_parameters_extra_param(self):
         """`check_parameters()` must raise an exception if an extra parameter is given"""
@@ -247,7 +253,8 @@ class DownloadJobTests(unittest.TestCase):
             models.DownloadJob.check_parameters(parameters)
         self.assertListEqual(
             raised.exception.detail,
-            [ErrorDetail(string="The download action accepts only one parameter: 'dataset_id'",
+            [ErrorDetail(string="The download action accepts only the following parameters:"
+                                " ('dataset_id', 'bounding_box', 'publish', 'copy_to')",
                          code='invalid')])
 
     def test_check_parameters_wrong_id_type(self):
@@ -296,7 +303,7 @@ class ConvertJobTests(unittest.TestCase):
             raised.exception.detail,
             [ErrorDetail(string="The convert action accepts only these parameters: "
                                 "dataset_id, format, bounding_box, skip_check, converter_options, "
-                                "remove_downloaded, ttl",
+                                "remove_downloaded, ttl, copy_to",
                          code='invalid')])
 
     def test_check_parameters_wrong_format(self):
@@ -316,7 +323,7 @@ class ConvertJobTests(unittest.TestCase):
             raised.exception.detail,
             [ErrorDetail(string="The convert action accepts only these parameters: "
                                 "dataset_id, format, bounding_box, skip_check, converter_options, "
-                                "remove_downloaded, ttl",
+                                "remove_downloaded, ttl, copy_to",
                          code='invalid')])
 
     def test_check_parameters_wrong_type_for_dataset_id(self):
@@ -374,6 +381,7 @@ class ConvertJobTests(unittest.TestCase):
         """Test the right signature is returned"""
         base_chain = celery.chain(
             tasks_core.download.signature(),
+            tasks_core.copy.signature(kwargs={'copy_to': None}),
             tasks_core.unarchive.signature(),
             tasks_core.crop.signature(
                 kwargs={'bounding_box': [0, 20, 20, 0]}),
@@ -405,6 +413,7 @@ class ConvertJobTests(unittest.TestCase):
             }),
             celery.chain(
                 tasks_core.download.signature(),
+                tasks_core.copy.signature(kwargs={'copy_to': None}),
                 tasks_core.unarchive.signature(),
                 tasks_core.crop.signature(
                     kwargs={'bounding_box': [0, 20, 20, 0]}),
