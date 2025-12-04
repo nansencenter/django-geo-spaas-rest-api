@@ -11,49 +11,25 @@ class BasicAPITests(django.test.TestCase):
         response = self.client.get('/api/')
         self.assertEqual(response.status_code, 200)
 
-    def test_geographic_locations_call(self):
-        """
-        shall return status code 200 for geographic_locations as well as exact geographic_locations
-        """
-        response2 = self.client.get('/api/geographic_locations/')
-        self.assertEqual(response2.status_code, 200)
-        self.assertJSONEqual(response2.content, {
-            'next': None, 'previous': None, 'results': [
-                {'id': 1, 'geometry': 'SRID=4326;POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0))'},
-                {'id': 2, 'geometry': 'SRID=4326;POLYGON ((20 20, 20 30, 30 30, 30 20, 20 20))'}
-            ]
-        })
-
-    def test_sources_call(self):
-        """shall return status code 200 for source as well as exact source object"""
-        response3 = self.client.get('/api/sources/1/')
+    def test_keyword_call(self):
+        """shall return status code 200 for and a serialized keyword"""
+        response3 = self.client.get('/api/keywords/1/')
         self.assertEqual(response3.status_code, 200)
-        self.assertJSONEqual(response3.content,
-                             {'id': 1, 'specs': 'Nothing special', 'platform': 1, 'instrument': 2})
-
-    def test_instruments_call(self):
-        """shall return status code 200 for instruments as well as exact instrument object"""
-        response4 = self.client.get('/api/instruments/2/')
-        self.assertEqual(response4.status_code, 200)
-        self.assertJSONEqual(response4.content, {
-            'id': 2, 'category': 'Solar/Space Observing Instruments',
-            'instrument_class': 'X-Ray/Gamma Ray Detectors',
-            'type': 'dummy_included_in_test_mode',
-            'subtype': 'dummy_included_in_test_mode',
-            'short_name': 'HXT',
-            'long_name': 'Hard X-ray Telescope'
-        })
-
-    def test_platforms_call(self):
-        """shall return status code 200 for platforms as well as exact platform object"""
-        response5 = self.client.get('/api/platforms/2/')
-        self.assertEqual(response5.status_code, 200)
-        self.assertJSONEqual(response5.content, {
-            'id': 2, 'category': 'Aircraft',
-            'series_entity': 'dummy_included_in_test_mode',
-            'short_name': 'A340-600',
-            'long_name': 'Airbus A340-600'
-        })
+        self.assertJSONEqual(
+            response3.content,
+            {
+                "id":1,
+                "version": "",
+                "kind": "gcmd_instrument",
+                "data": {
+                    "category": "Earth Remote Sensing Instruments",
+                    "short_name":"",
+                    "long_name":"",
+                    "subtype":"",
+                    "type":"",
+                    "instrument_class":""
+                }
+            })
 
     def test_datasets_call(self):
         """shall return status code 200 for datasets as well as exact dataset object"""
@@ -67,12 +43,10 @@ class BasicAPITests(django.test.TestCase):
             'time_coverage_start': '2010-01-01T00:00:00Z',
             'time_coverage_end': '2010-01-02T00:00:00Z',
             'access_constraints': None,
-            'ISO_topic_category': 1,
-            'data_center': 1,
-            'source': 1,
-            'geographic_location': 1,
-            'gcmd_location': 1,
-            'parameters': []
+            'keywords': [2, 18, 3, 7, 17],
+            'location': ("SRID=4326;POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0))"),
+            'parameters': [],
+            'tags': [],
         })
 
     def test_parameters_call(self):
@@ -86,8 +60,6 @@ class BasicAPITests(django.test.TestCase):
         self.assertEqual(response10.status_code, 200)
         self.assertJSONEqual(response10.content, {
             'id': 2,
-            'name': 'fileService',
-            'service': 'local',
             'uri': 'file://localhost/some/test/file2.ext',
             'dataset': 2
         })
@@ -96,21 +68,6 @@ class BasicAPITests(django.test.TestCase):
         """shall return status code 200 for dataset_relationships"""
         response11 = self.client.get('/api/dataset_relationships/')
         self.assertEqual(response11.status_code, 200)
-
-    def test_datacenters_call(self):
-        """shall return status code 200 for datacenters as well as exact datacenter object"""
-        response12 = self.client.get('/api/datacenters/2/')
-        self.assertEqual(response12.status_code, 200)
-        self.assertJSONEqual(response12.content, {
-            'id': 2,
-            'bucket_level0': 'ACADEMIC',
-            'bucket_level1': 'dummy_included_in_test_mode',
-            'bucket_level2': 'dummy_included_in_test_mode',
-            'bucket_level3': 'dummy_included_in_test_mode',
-            'short_name': 'AALTO',
-            'long_name': 'Aalto University',
-            'data_center_url': 'dummy_included_in_test_mode'
-        })
 
 
 class DatasetFilteringTests(django.test.TestCase):
@@ -125,12 +82,10 @@ class DatasetFilteringTests(django.test.TestCase):
         'time_coverage_start': '2010-01-01T00:00:00Z',
         'time_coverage_end': '2010-01-02T00:00:00Z',
         'access_constraints': None,
-        'ISO_topic_category': 1,
-        'data_center': 1,
-        'source': 1,
-        'geographic_location': 1,
-        'gcmd_location': 1,
-        'parameters': []
+        'keywords': [2, 18, 3, 7, 17],
+        'location': ("SRID=4326;POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0))"),
+        'parameters': [],
+        'tags': [],
     }
 
     DATASET_DICT_2 = {
@@ -141,12 +96,10 @@ class DatasetFilteringTests(django.test.TestCase):
         'time_coverage_start': '2010-01-02T00:00:00Z',
         'time_coverage_end': '2010-01-03T00:00:00Z',
         'access_constraints': None,
-        'ISO_topic_category': 1,
-        'data_center': 2,
-        'source': 2,
-        'geographic_location': 2,
-        'gcmd_location': 1,
-        'parameters': []
+        'keywords': [2, 18, 4, 8, 17],
+        'location': ("SRID=4326;POLYGON ((20 20, 20 30, 30 30, 30 20, 20 20))"),
+        'parameters': [],
+        'tags': [],
     }
 
     def test_time_filtering(self):
@@ -201,45 +154,44 @@ class DatasetFilteringTests(django.test.TestCase):
         """
         # giving a location without SRID
         response = self.client.get(
-            '/api/datasets/?geographic_location__geometry__intersects=POINT+%289+9%29')
-        self.assertJSONEqual(response.content, {
-            'next': None, 'previous': None, 'results': [self.DATASET_DICT_1]
-        })
+            '/api/datasets/?location__intersects=POINT+%289+9%29')
+        self.assertJSONEqual(
+            response.content,
+            {'next': None, 'previous': None, 'results': [self.DATASET_DICT_1]})
 
         # giving a location with SRID
         response = self.client.get(
             '/api/datasets/'
-            '?geographic_location__geometry__intersects=SRID%3D4326%3BPOINT+%289+9%29'
+            '?location__intersects=SRID%3D4326%3BPOINT+%289+9%29'
         )
-        self.assertJSONEqual(response.content, {
-            'next': None, 'previous': None, 'results': [self.DATASET_DICT_1]
-        })
+        self.assertJSONEqual(
+            response.content,
+            {'next': None, 'previous': None, 'results': [self.DATASET_DICT_1]})
 
     def test_source_instrument_filtering(self):
         """Test filtering datasets on their instrument"""
-        response = self.client.get('/api/datasets/?source__instrument__short_name=HXT')
+        response = self.client.get('/api/datasets/?keywords__data__icontains=HXT')
         self.assertJSONEqual(response.content, {
-            'next': None, 'previous': None, 'results': [self.DATASET_DICT_1, self.DATASET_DICT_2]}
-        )
+            'next': None, 'previous': None, 'results': [self.DATASET_DICT_1, self.DATASET_DICT_2]})
 
     def test_source_platform_filtering(self):
         """Test filtering datasets on a keyword which should be
         contained in the platform short name
         """
-        response = self.client.get('/api/datasets/?source__platform__short_name__contains=A340')
+        response = self.client.get('/api/datasets/?keywords__data__icontains=A340')
         self.assertJSONEqual(response.content, {
             'next': None, 'previous': None, 'results': [self.DATASET_DICT_2]
         })
 
     def test_source_filtering(self):
         """Test filtering datasets on their platform and instrument"""
+        self.maxDiff = None
         response = self.client.get(
             '/api/datasets/'
-            '?source__platform__short_name=A340-600'
-            '&source__instrument__short_name=HXT')
-        self.assertJSONEqual(response.content, {
-            'next': None, 'previous': None, 'results': [self.DATASET_DICT_2]
-        })
+            '?keywords__data__icontains=A340-600')
+        self.assertJSONEqual(
+            response.content,
+            {'next': None, 'previous': None, 'results': [self.DATASET_DICT_2]})
 
     def test_zone_and_time_filtering(self):
         """Test filtering datasets on both time and location"""
@@ -259,12 +211,12 @@ class DatasetFilteringTests(django.test.TestCase):
         response = self.client.get(
             '/api/datasets/'
             f'?time_coverage_start__lte={date}&time_coverage_end__gte={date}'
-            '&geographic_location__geometry__contains=POINT+%289+9%29'
-            '&source__instrument__short_name__contains=HXT'
+            '&location__contains=POINT+%289+9%29'
+            '&keywords__data__short_name__contains=HXT'
         )
-        self.assertJSONEqual(response.content, {
-            'next': None, 'previous': None, 'results': [self.DATASET_DICT_1]}
-        )
+        self.assertJSONEqual(
+            response.content,
+            {'next': None, 'previous': None, 'results': [self.DATASET_DICT_1]})
 
 
 class DatasetURIFilteringTests(django.test.TestCase):
@@ -278,8 +230,6 @@ class DatasetURIFilteringTests(django.test.TestCase):
         self.assertJSONEqual(response.content, {
             'next': None, 'previous': None, 'results': [{
                 "id": 1,
-                "name": "fileService",
-                "service": "local",
                 "uri": "file://localhost/some/test/file1.ext",
                 "dataset": 1
             }]
