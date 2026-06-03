@@ -19,6 +19,7 @@ RUN apt update && \
     djangorestframework-filters==1.0.0dev2 \
     'importlib-metadata==4.*' \
     markdown \
+    'numpy<2' \
     "git+https://github.com/nansencenter/django-geo-spaas-processing@${GEOSPAAS_PROCESSING_VERSION}" \
     "git+https://github.com/nansencenter/django-geo-spaas-harvesting@${GEOSPAAS_HARVESTING_VERSION}"
 
