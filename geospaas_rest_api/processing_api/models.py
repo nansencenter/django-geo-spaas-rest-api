@@ -240,23 +240,13 @@ class SyntoolCleanupJob(Job):
 
     @staticmethod
     def check_parameters(parameters):
-        accepted_keys = ('criteria',)
-        if not set(parameters).issubset(accepted_keys):
-            raise ValidationError(
-                "The syntool cleanup action accepts only these parameters: " +
-                str({', '.join(accepted_keys)}))
-
-        try:
-            if not isinstance(parameters['criteria'], dict):
-                raise ValidationError("'criteria' must be a dictionary")
-        except KeyError as error:
-            raise ValidationError("The parameter 'criteria' is mandatory") from error
-
+        if parameters != {}:
+            raise ValidationError("Cleanup does not take any parameters")
         return parameters
 
     @staticmethod
     def make_task_parameters(parameters):
-        return ((parameters['criteria'],), {})
+        return (tuple(), {})
 
 
 class SyntoolCompareJob(Job):
