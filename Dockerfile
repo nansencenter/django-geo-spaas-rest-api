@@ -20,6 +20,7 @@ RUN apt update && \
     'importlib-metadata==4.*' \
     markdown \
     'numpy<2' \
+    'setuptools<81' \
     "git+https://github.com/nansencenter/django-geo-spaas-processing@${GEOSPAAS_PROCESSING_VERSION}" \
     "git+https://github.com/nansencenter/django-geo-spaas-harvesting@${GEOSPAAS_HARVESTING_VERSION}"
 
