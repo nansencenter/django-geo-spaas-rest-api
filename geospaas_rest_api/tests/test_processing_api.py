@@ -285,6 +285,15 @@ class DownloadJobTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             models.DownloadJob.check_parameters({'dataset_id': 1, 'publish': 1})
 
+    def test_check_parameters_wrong_copy_to_type(self):
+        """`check_parameters()` must raise an exception if the
+        'copy_to' value is of the wrong type
+        """
+        with self.assertRaises(ValidationError):
+            models.DownloadJob.check_parameters({'dataset_id': 1, 'copy_to': False})
+        with self.assertRaises(ValidationError):
+            models.DownloadJob.check_parameters({'dataset_id': 1, 'copy_to': 1})
+
 
 class ConvertJobTests(unittest.TestCase):
     """Tests for the ConvertJob class"""
@@ -377,6 +386,17 @@ class ConvertJobTests(unittest.TestCase):
             models.ConvertJob.check_parameters(
                 {'dataset_id': 1, 'format': 'syntool', 'ttl': 2})
 
+    def test_check_parameters_wrong_copy_to_type(self):
+        """`check_parameters()` must raise an exception if the
+        'copy_to' value is of the wrong type
+        """
+        with self.assertRaises(ValidationError):
+            models.ConvertJob.check_parameters(
+                {'dataset_id': 1, 'format': 'syntool', 'copy_to': False})
+        with self.assertRaises(ValidationError):
+            models.ConvertJob.check_parameters(
+                {'dataset_id': 1, 'format': 'syntool', 'copy_to': 1})
+
     def test_get_signature_syntool(self):
         """Test the right signature is returned"""
         base_chain = celery.chain(
@@ -442,28 +462,13 @@ class SyntoolCleanupJobTests(unittest.TestCase):
                 models.SyntoolCleanupJob.get_signature({}),
                 mock_syntool_tasks.cleanup.signature.return_value)
 
-    def test_check_parameters_ok(self):
-        """Test that check_parameters() returns the parameters when
-        they are valid
-        """
-        self.assertDictEqual(
-            models.SyntoolCleanupJob.check_parameters({'criteria': {'id': 539}}),
-            {'criteria': {'id': 539}})
-
-    def test_check_parameters_unknown(self):
-        """An error should be raised when an unknown parameter is given
-        """
-        with self.assertRaises(ValidationError):
-            models.SyntoolCleanupJob.check_parameters({'foo': 'bar'})
-
-    def test_check_parameters_no_criteria(self):
+    def test_check_parameters_empty(self):
         """An error should be raised when the criteria parameter is
         absent
         """
-        with self.assertRaises(ValidationError):
-            models.SyntoolCleanupJob.check_parameters({})
+        self.assertDictEqual({}, models.SyntoolCleanupJob.check_parameters({}))
 
-    def test_check_parameters_wrong_type(self):
+    def test_check_parameters_not_empty(self):
         """An error should be raised when `criteria` is not a dictionary
         """
         with self.assertRaises(ValidationError):
@@ -474,8 +479,8 @@ class SyntoolCleanupJobTests(unittest.TestCase):
         parameters
         """
         self.assertTupleEqual(
-            models.SyntoolCleanupJob.make_task_parameters({'criteria': {'id': 539}}),
-            (({'id': 539},), {}))
+            models.SyntoolCleanupJob.make_task_parameters({}),
+            (tuple(), {}))
 
 
 class SyntoolCompareJobTests(unittest.TestCase):

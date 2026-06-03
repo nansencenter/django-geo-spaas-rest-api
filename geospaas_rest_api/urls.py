@@ -22,17 +22,12 @@ from rest_framework import routers
 
 router = routers.DefaultRouter()
 
-router.register(r'datacenters', base_views.DataCenterViewSet)
 router.register(r'dataset_relationships', base_views.DatasetRelationshipViewSet)
 router.register(r'dataset_uris', base_views.DatasetURIViewSet)
 router.register(r'datasets', base_views.DatasetViewSet)
-router.register(r'gcmd_locations', base_views.LocationViewSet)
-router.register(r'geographic_locations', base_views.GeographicLocationViewSet)
-router.register(r'instruments', base_views.InstrumentViewSet)
+router.register(r'tags', base_views.TagViewSet)
+router.register(r'keywords', base_views.KeywordViewSet)
 router.register(r'parameters', base_views.ParameterViewSet)
-router.register(r'platforms', base_views.PlatformViewSet)
-router.register(r'science_keywords', base_views.ScienceKeywordViewSet)
-router.register(r'sources', base_views.SourceViewSet)
 if os.environ.get('GEOSPAAS_REST_API_ENABLE_PROCESSING', 'false').lower() == 'true':
     import geospaas_rest_api.processing_api.views as processing_views
     router.register(r'tasks', processing_views.TaskViewSet)
