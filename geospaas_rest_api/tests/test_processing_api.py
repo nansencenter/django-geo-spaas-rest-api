@@ -28,6 +28,7 @@ class TaskViewSetTests(django.test.TestCase):
 
     def test_list_tasks(self):
         """The list of tasks must be returned"""
+        self.maxDiff = None
         expected_result = {
             'next': None, 'previous': None,
             'results': [
@@ -45,6 +46,8 @@ class TaskViewSetTests(django.test.TestCase):
                     'task_args': "((1, 'ftp://test/dataset_1_S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.zip'),)",
                     'date_created': '2020-07-16T13:58:22.918000Z',
                     'date_done': '2020-07-16T13:58:21.201000Z',
+                    "date_started": None,
+                    "periodic_task_name": None,
                     'meta': "{\"children\": []}"
                 }, {
                     'id': 3,
@@ -60,6 +63,8 @@ class TaskViewSetTests(django.test.TestCase):
                     'task_args': "((1, 'ftp://test/dataset_1_S3A_OL_1_EFR____20181213T024322_20181213T024622_20181214T065355_0179_039_089_2340_LN1_O_NT_002.zip'),)",
                     'date_created': '2020-07-16T13:57:21.918000Z',
                     'date_done': '2020-07-16T13:57:21.918000Z',
+                    "date_started": None,
+                    "periodic_task_name": None,
                     'meta': "{\"children\": []}"
                 }, {
                     'id': 2,
@@ -75,6 +80,8 @@ class TaskViewSetTests(django.test.TestCase):
                     'task_args': '(1,)',
                     'date_created': '2020-07-16T13:53:33.864000Z',
                     'date_done': '2020-07-16T13:57:21.912000Z',
+                    "date_started": None,
+                    "periodic_task_name": None,
                     'meta': "{\"children\": [[[\"733d3a63-7a5a-4a1e-8cf0-750ae393dd98\", null], null]]}"
                 }, {
                     'id': 1,
@@ -90,6 +97,8 @@ class TaskViewSetTests(django.test.TestCase):
                     'task_args': '(1,)',
                     'date_created': '2020-07-16T13:52:33.864000Z',
                     'date_done': '2020-07-16T13:52:33.864000Z',
+                    "date_started": None,
+                    "periodic_task_name": None,
                     'meta': "{\"children\": []}"
                 }
             ]
@@ -112,6 +121,8 @@ class TaskViewSetTests(django.test.TestCase):
             "result": "{\"pid\": 22, \"hostname\": \"celery@3b6b6202fcbe\"}",
             "date_created": "2020-07-16T13:52:33.864000Z",
             "date_done": "2020-07-16T13:52:33.864000Z",
+            "date_started": None,
+            "periodic_task_name": None,
             "traceback": None,
             "meta": "{\"children\": []}"
         })

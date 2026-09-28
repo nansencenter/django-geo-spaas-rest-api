@@ -128,7 +128,7 @@ class DatasetFilteringTests(django.test.TestCase):
         """
         An error 400 should be returned if the format of the date provided to the filter is invalid
         """
-        response = self.client.get('/api/datasets/?time_coverage_start__lte=2010-01-02T01:00:Z')
+        response = self.client.get('/api/datasets/?time_coverage_start__lte=2010-01-02T01:00:ab')
         self.assertEqual(response.status_code, 400)
         self.assertJSONEqual(
             response.content,
