@@ -11,9 +11,9 @@ RUN apt update && \
     apt install -y git nco && \
     apt clean && rm -rf /var/lib/apt/lists/* && \
     pip install --upgrade --no-cache-dir \
-    'celery==5.2.*' \
-    'django-celery-results==2.2.*' \
-    'django==3.*' \
+    'celery==5.4.*' \
+    'django-celery-results==2.6.*' \
+    'django==5.*' \
     django-filter \
     djangorestframework \
     djangorestframework-filters==1.0.0dev2 \
